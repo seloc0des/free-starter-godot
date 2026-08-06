@@ -1,0 +1,141 @@
+[gd_scene load_steps=9 format=3 uid="uid://cfsworld0001"]
+
+[ext_resource type="Script" path="res://game/player.gd" id="1"]
+[ext_resource type="Script" path="res://game/npc.gd" id="2"]
+[ext_resource type="Script" path="res://game/herb.gd" id="3"]
+[ext_resource type="Script" path="res://game/hud.gd" id="4"]
+[ext_resource type="PackedScene" path="res://addons/dialogue_lite/dialogue_box_lite.tscn" id="5"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(24, 24)
+
+[sub_resource type="CircleShape2D" id="2"]
+radius = 46.0
+
+[sub_resource type="RectangleShape2D" id="3"]
+size = Vector2(18, 18)
+
+[node name="World" type="Node2D"]
+
+[node name="Ground" type="ColorRect" parent="."]
+offset_left = -400.0
+offset_top = -400.0
+offset_right = 1360.0
+offset_bottom = 1000.0
+color = Color(0.129412, 0.219608, 0.164706, 1)
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(360, 360)
+script = ExtResource("1")
+
+[node name="Body" type="ColorRect" parent="Player"]
+offset_left = -12.0
+offset_top = -12.0
+offset_right = 12.0
+offset_bottom = 12.0
+color = Color(0.301961, 0.552941, 0.898039, 1)
+
+[node name="Col" type="CollisionShape2D" parent="Player"]
+shape = SubResource("1")
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+
+[node name="Healer" type="Area2D" parent="."]
+position = Vector2(680, 240)
+script = ExtResource("2")
+
+[node name="Body" type="ColorRect" parent="Healer"]
+offset_left = -14.0
+offset_top = -22.0
+offset_right = 14.0
+offset_bottom = 20.0
+color = Color(0.4, 0.752941, 0.45098, 1)
+
+[node name="Col" type="CollisionShape2D" parent="Healer"]
+shape = SubResource("2")
+
+[node name="Name" type="Label" parent="Healer"]
+offset_left = -24.0
+offset_top = -46.0
+offset_right = 40.0
+offset_bottom = -24.0
+text = "Healer"
+
+[node name="Prompt" type="Label" parent="Healer"]
+offset_left = -34.0
+offset_top = -66.0
+offset_right = 46.0
+offset_bottom = -46.0
+text = "[Space] Talk"
+
+[node name="Herb1" type="Area2D" parent="."]
+position = Vector2(840, 440)
+script = ExtResource("3")
+herb_id = "herb_1"
+
+[node name="Body" type="ColorRect" parent="Herb1"]
+offset_left = -9.0
+offset_top = -9.0
+offset_right = 9.0
+offset_bottom = 9.0
+color = Color(0.847059, 0.4, 0.8, 1)
+
+[node name="Col" type="CollisionShape2D" parent="Herb1"]
+shape = SubResource("3")
+
+[node name="Herb2" type="Area2D" parent="."]
+position = Vector2(440, 500)
+script = ExtResource("3")
+herb_id = "herb_2"
+
+[node name="Body" type="ColorRect" parent="Herb2"]
+offset_left = -9.0
+offset_top = -9.0
+offset_right = 9.0
+offset_bottom = 9.0
+color = Color(0.847059, 0.4, 0.8, 1)
+
+[node name="Col" type="CollisionShape2D" parent="Herb2"]
+shape = SubResource("3")
+
+[node name="Herb3" type="Area2D" parent="."]
+position = Vector2(980, 320)
+script = ExtResource("3")
+herb_id = "herb_3"
+
+[node name="Body" type="ColorRect" parent="Herb3"]
+offset_left = -9.0
+offset_top = -9.0
+offset_right = 9.0
+offset_bottom = 9.0
+color = Color(0.847059, 0.4, 0.8, 1)
+
+[node name="Col" type="CollisionShape2D" parent="Herb3"]
+shape = SubResource("3")
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("4")
+
+[node name="Bar" type="HBoxContainer" parent="HUD"]
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 44.0
+theme_override_constants/separation = 12
+
+[node name="Status" type="Label" parent="HUD/Bar"]
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+text = "Find the Healer."
+
+[node name="Save" type="Button" parent="HUD/Bar"]
+layout_mode = 2
+text = "Save"
+
+[node name="Load" type="Button" parent="HUD/Bar"]
+layout_mode = 2
+text = "Load"
+
+[node name="DialogueBoxLite" parent="HUD" instance=ExtResource("5")]

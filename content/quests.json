@@ -1,0 +1,10 @@
+[
+  {
+    "id": "gather_herbs",
+    "title": "Gather Herbs",
+    "description": "The healer needs 3 herbs from the meadow.",
+    "objectives": [
+      { "id": "collect_herb", "type": "collect", "target": "herb", "required": 3 }
+    ]
+  }
+]

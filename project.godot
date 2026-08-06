@@ -1,0 +1,24 @@
+; SELODEV Free Starter — standalone, zero paid dependencies.
+; Autoloads are declared here directly (plugins stay disabled at runtime).
+
+config_version=5
+
+[application]
+
+config/name="SELODEV Free Starter"
+config/icon="res://icon.png"
+run/main_scene="res://game/world.tscn"
+config/features=PackedStringArray("4.3")
+
+[autoload]
+
+GameEvents="*res://chassis/game_events.gd"
+SaveLite="*res://addons/save_load_lite/save_lite.gd"
+QuestsLite="*res://addons/quests_lite/quest_manager_lite.gd"
+DialoguesLite="*res://addons/dialogue_lite/dialogue_manager_lite.gd"
+GameBootstrap="*res://chassis/game_bootstrap.gd"
+
+[display]
+
+window/size/viewport_width=960
+window/size/viewport_height=600

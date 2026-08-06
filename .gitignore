@@ -1,0 +1,18 @@
+# Godot 4 editor cache — regenerated on open
+.godot/
+
+# Exported builds
+/export/
+/build/
+export_presets.cfg
+
+# OS cruft
+.DS_Store
+Thumbs.db
+
+# Promo assets + capture tooling — not part of the template
+marketing/
+tools/capture.gd
+tools/capture.gd.uid
+tools/capture.tscn
+store-listing.md
