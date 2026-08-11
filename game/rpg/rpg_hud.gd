@@ -7,6 +7,9 @@ extends CanvasLayer
 @onready var _status: Label = $Bar/Status
 @onready var _gold: Label = $Bar/Gold
 @onready var _attack: Label = $Bar/Attack
+@onready var _satchel: Label = $Bar/Satchel
+
+@export var satchel_path: NodePath
 
 var _progress: Dictionary = {}
 
@@ -17,12 +20,16 @@ func _ready() -> void:
 	$Bar/Save.pressed.connect(func() -> void: SaveLite.save())
 	$Bar/Load.pressed.connect(func() -> void: SaveLite.load())
 
-	_status.text = "Gear up for the road — gather the town's lost coins."
+	_status.text = "Gear up for the road. Gather the town's lost coins."
 	_seed_totals()
 	QuestsLite.quest_started.connect(func(_id: String) -> void: _seed_totals())
 	QuestsLite.objective_progressed.connect(_on_progress)
 	QuestsLite.quest_completed.connect(func(_id: String) -> void:
-		_status.text = "Geared up! The road is yours — save your game.")
+		_status.text = "Geared up! The road is yours. Save your game.")
+
+	var satchel := get_node_or_null(satchel_path) as InventoryLite
+	if satchel != null:
+		satchel.contents_changed.connect(func() -> void: _refresh_satchel(satchel))
 
 	var wallets := get_tree().get_nodes_in_group("wallet")
 	if wallets.size() > 0:
@@ -37,6 +44,14 @@ func _ready() -> void:
 			s.stat_changed.connect(func(id: String, v: float) -> void:
 				if id == "attack": _attack.text = "Attack: %d" % int(v))
 			break
+
+
+func _refresh_satchel(satchel: InventoryLite) -> void:
+	var names: Array = []
+	for entry in satchel.slots():
+		if entry.get("item") != null:
+			names.append(String(entry.item.name))
+	_satchel.text = "Satchel: %s" % (", ".join(names) if names.size() > 0 else "empty")
 
 
 func _seed_totals() -> void:

@@ -1,0 +1,31 @@
+[
+  {
+    "id": "shopkeeper",
+    "title": "Shopkeeper",
+    "entry": "greet",
+    "nodes": [
+      {
+        "id": "greet",
+        "speaker": "Shopkeeper",
+        "text": "A traveler! You'll want a blade for the road. Five gold buys this one.",
+        "choices": [
+          { "text": "Buy the sword (5 gold).", "next": "buy" },
+          { "text": "Not right now.", "next": "bye" }
+        ]
+      },
+      {
+        "id": "buy",
+        "speaker": "Shopkeeper",
+        "text": "Sold. May it serve you well out there.",
+        "event": "buy_sword",
+        "next": ""
+      },
+      {
+        "id": "bye",
+        "speaker": "Shopkeeper",
+        "text": "The road waits. Come back when you have the coin.",
+        "next": ""
+      }
+    ]
+  }
+]

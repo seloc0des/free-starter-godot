@@ -1,5 +1,5 @@
 {
   "title": "SELODEV RPG Starter",
   "genre": "rpg",
-  "systems": ["save", "quests", "vendor", "equipment", "stats", "controller"]
+  "systems": ["save", "quests", "vendor", "equipment", "stats", "controller", "dialogue", "inventory"]
 }

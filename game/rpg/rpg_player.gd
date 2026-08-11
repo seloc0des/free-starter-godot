@@ -15,6 +15,9 @@ var _bob := 0.0
 func _ready() -> void:
 	_sword.visible = false
 	_equipment.item_equipped.connect(_on_equipped)
+	# freeze at the stall while the shopkeeper is talking
+	DialoguesLite.dialogue_started.connect(func(_id: String) -> void: ControllersLite.lock_movement(&"dialogue"))
+	DialoguesLite.dialogue_finished.connect(func(_id: String) -> void: ControllersLite.unlock_movement(&"dialogue"))
 
 
 func _physics_process(delta: float) -> void:

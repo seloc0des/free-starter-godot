@@ -1,11 +1,13 @@
 extends Area2D
 
-# The market stall. Vendor Lite holds the stock and the wallet binding; this
-# script is the walk-up: enough gold buys the sword and hands it straight to
-# the player's Equipment. Sold state saves.
+# The market stall. Walk up and the shopkeeper talks (Dialogue Lite). Choosing
+# to buy fires a `buy_sword` event; this script runs the real Vendor Lite
+# transaction, which deposits the sword into the satchel (Inventory Lite) and
+# hands it to the player's Equipment. Sold state saves.
 
 @export var vendor_path: NodePath
 @export var sword_item: ItemLite
+@export var dialogue_id: String = "shopkeeper"
 
 @onready var _prompt: Label = $Prompt
 
@@ -18,12 +20,19 @@ func _ready() -> void:
 	_prompt.visible = false
 	_vendor = get_node_or_null(vendor_path) as VendorLite
 	_vendor.purchase_completed.connect(_on_purchase)
+	DialoguesLite.event_fired.connect(_on_dialogue_event)
 	body_entered.connect(_on_body_entered)
 	body_exited.connect(func(_b: Node) -> void: _prompt.visible = false)
 
 
 func _on_body_entered(b: Node) -> void:
-	if _sold or not b.is_in_group("player"):
+	if _sold or not b.is_in_group("player") or DialoguesLite.is_active():
+		return
+	DialoguesLite.start(dialogue_id)
+
+
+func _on_dialogue_event(event_id: String) -> void:
+	if event_id != "buy_sword" or _sold:
 		return
 	if not _vendor.buy(sword_item):
 		_prompt.visible = true

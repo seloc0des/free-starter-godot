@@ -9,11 +9,15 @@ Three collect objectives: coins, the sword, and being geared. Change the coin
 count and the HUD follows. Rename the `title` and `description` and it reads
 as your game.
 
-## 2. Change the shop
+## 2. Change the shop and what the shopkeeper says
 
 Select the `Vendor` node. Its stock is right there in the Inspector: the item,
 the price, how many. Point it at a different item resource and the stall sells
-that instead. The wallet the vendor charges is the `Wallet` node.
+that instead. The wallet the vendor charges is the `Wallet` node, and the sword
+lands in the `Satchel` Inventory on purchase. What the shopkeeper actually says
+is `content/dialogue.json`, plain text: rewrite the greeting, add lines, add
+choices. The choice that carries `"event": "buy_sword"` is the one that rings
+up the sale.
 
 ## 3. Change the gear
 

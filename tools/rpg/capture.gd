@@ -19,6 +19,7 @@ func _ready() -> void:
 	_register_quest()
 	_world = WORLD.instantiate()
 	add_child(_world)
+	_register_dialogue()
 	_run()
 
 
@@ -43,6 +44,36 @@ func _register_quest() -> void:
 	QuestsLite.start_quest(quest.id)
 
 
+func _register_dialogue() -> void:
+	var f := FileAccess.open(CONTENT + "dialogue.json", FileAccess.READ)
+	for entry in JSON.parse_string(f.get_as_text()):
+		var dd: Dictionary = entry
+		var dialogue := DialogueLite.new()
+		dialogue.id = String(dd.get("id", ""))
+		dialogue.title = String(dd.get("title", ""))
+		dialogue.entry = String(dd.get("entry", ""))
+		var built: Array[DialogueNodeLite] = []
+		for n in dd.get("nodes", []):
+			var nd: Dictionary = n
+			var node := DialogueNodeLite.new()
+			node.id = String(nd.get("id", ""))
+			node.speaker = String(nd.get("speaker", ""))
+			node.text = String(nd.get("text", ""))
+			node.next = String(nd.get("next", ""))
+			node.event = String(nd.get("event", ""))
+			var choices: Array[DialogueChoiceLite] = []
+			for c in nd.get("choices", []):
+				var cd: Dictionary = c
+				var choice := DialogueChoiceLite.new()
+				choice.text = String(cd.get("text", ""))
+				choice.next = String(cd.get("next", ""))
+				choices.append(choice)
+			node.choices = choices
+			built.append(node)
+		dialogue.nodes = built
+		DialoguesLite.register(dialogue)
+
+
 func _run() -> void:
 	_capturing = true
 	_capture_loop()
@@ -65,8 +96,13 @@ func _run() -> void:
 		await _wait(0.3)
 	player.global_position = Vector2(712, 350)
 	await _wait(0.4)
-	_world.get_node("Stall")._on_body_entered(player)
-	await _wait(0.6)
+	# the shopkeeper greets you
+	DialoguesLite.start("shopkeeper")
+	await _wait(0.7)
+	await _shot("rpg_shop")
+	# buy the blade
+	DialoguesLite.choose(0)
+	await _wait(0.8)
 	await _shot("rpg_geared")
 
 	_capturing = false
