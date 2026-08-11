@@ -11,6 +11,7 @@ const HEART_COUNT := 5
 
 @onready var _status: Label = $Bar/Status
 @onready var _hearts: HBoxContainer = $Bar/Hearts
+@onready var _attack: Label = $Bar/Attack
 
 var _player_health: HealthLite = null
 
@@ -36,6 +37,11 @@ func _ready() -> void:
 
 	# player spawns in the same scene, so it exists by the time we're ready
 	var players := get_tree().get_nodes_in_group("player")
+	if players.size() > 0 and players[0].has_node("Stats"):
+		var s: StatsComponentLite = players[0].get_node("Stats")
+		_attack.text = "Attack: %d" % int(s.get_stat("attack"))
+		s.stat_changed.connect(func(id: String, v: float) -> void:
+			if id == "attack": _attack.text = "Attack: %d" % int(v))
 	if players.size() > 0 and players[0].has_node("Health"):
 		_player_health = players[0].get_node("Health") as HealthLite
 		_player_health.damaged.connect(func(_a: float, _s: Node) -> void: _refresh())

@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3 uid="uid://cfsworlddun01"]
+[gd_scene load_steps=27 format=3 uid="uid://cfsworlddun01"]
 
 [ext_resource type="Script" path="res://game/dungeon/dungeon_player.gd" id="1"]
 [ext_resource type="Script" path="res://game/dungeon/dungeon_enemy.gd" id="2"]
@@ -17,6 +17,9 @@
 [ext_resource type="Script" path="res://addons/combat_lite/health_lite.gd" id="15"]
 [ext_resource type="Script" path="res://addons/combat_lite/hurtbox_lite.gd" id="16"]
 [ext_resource type="Script" path="res://addons/combat_lite/hitbox_lite.gd" id="17"]
+[ext_resource type="Script" path="res://addons/stats_skills_lite/stats_component_lite.gd" id="18"]
+[ext_resource type="Resource" path="res://game/dungeon/attack_stat.tres" id="19"]
+[ext_resource type="Resource" path="res://game/dungeon/crypt_loot.tres" id="20"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(14, 20)
@@ -65,6 +68,7 @@ texture = ExtResource("9")
 position = Vector2(760, 300)
 script = ExtResource("2")
 enemy_id = "goblin"
+loot_table = ExtResource("20")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="Goblin1"]
 offset = Vector2(0, -1)
@@ -101,6 +105,7 @@ shape = SubResource("4")
 position = Vector2(860, 430)
 script = ExtResource("2")
 enemy_id = "goblin"
+loot_table = ExtResource("20")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="Goblin2"]
 offset = Vector2(0, -1)
@@ -137,6 +142,7 @@ shape = SubResource("4")
 position = Vector2(700, 500)
 script = ExtResource("2")
 enemy_id = "goblin"
+loot_table = ExtResource("20")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="Goblin3"]
 offset = Vector2(0, -1)
@@ -173,6 +179,7 @@ shape = SubResource("4")
 position = Vector2(980, 300)
 script = ExtResource("2")
 enemy_id = "skeleton"
+loot_table = ExtResource("20")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="Skeleton1"]
 offset = Vector2(0, -1)
@@ -210,6 +217,7 @@ shape = SubResource("4")
 position = Vector2(950, 480)
 script = ExtResource("2")
 enemy_id = "skeleton"
+loot_table = ExtResource("20")
 
 [node name="Sprite" type="AnimatedSprite2D" parent="Skeleton2"]
 offset = Vector2(0, -1)
@@ -264,6 +272,10 @@ save_id = "dungeon_player"
 [node name="Health" type="Node" parent="Player"]
 script = ExtResource("15")
 
+[node name="Stats" type="Node" parent="Player"]
+script = ExtResource("18")
+definitions = [ExtResource("19")]
+
 [node name="Hurt" type="Area2D" parent="Player"]
 script = ExtResource("16")
 team = 0
@@ -305,6 +317,11 @@ layout_mode = 2
 size_flags_horizontal = 3
 vertical_alignment = 1
 text = "Clear the crypt."
+
+[node name="Attack" type="Label" parent="HUD/Bar"]
+layout_mode = 2
+vertical_alignment = 1
+text = "Attack: 25"
 
 [node name="Save" type="Button" parent="HUD/Bar"]
 layout_mode = 2
