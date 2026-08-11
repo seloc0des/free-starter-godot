@@ -67,9 +67,7 @@ func _ready() -> void:
 	var player: CharacterBody2D = world.get_node("Player")
 	ok = _exp(player.is_in_group("player"), "mover put the player in the player group") and ok
 
-	# --- D) attack pulse + respawn (before the kills so damage flow is fresh) ---
-	player.attack()
-	ok = _exp(player.get_node("Attack").monitoring, "attack pulse enables the hitbox") and ok
+	# --- D) death respawns the knight at the door ---
 	var spawn: Vector2 = player.global_position
 	player.global_position = spawn + Vector2(50, 0)
 	player.get_node("Health").take_damage(999.0)
@@ -77,10 +75,23 @@ func _ready() -> void:
 	ok = _exp(player.global_position.is_equal_approx(spawn), "death respawns the knight at the door") and ok
 	ok = _exp(player.get_node("Health").is_alive(), "and revives at full health") and ok
 
-	# --- F) stats drive the sword ---
+	# --- F) the sword actually damages the enemy in front, for the Stats amount ---
+	var target: CharacterBody2D = skeletons[0]
+	target.get_node("Brain").enabled = false
+	target.get_node("Touch").set_deferred("monitoring", false)
+	target.global_position = player.global_position + Vector2(16, 0)
+	player._facing = Vector2.RIGHT
+	player._cooldown = 0.0
+	await get_tree().physics_frame
+	var thp: float = target.get_node("Health").current
 	player.attack()
-	ok = _exp(player.get_node("Attack").damage == player.get_node("Stats").get_stat("attack"),
-		"sword damage reads from the Stats component") and ok
+	ok = _exp(player.get_node("Attack").monitoring, "the swing enables the hitbox") and ok
+	for _f in 8:
+		await get_tree().physics_frame
+	var dealt: float = thp - target.get_node("Health").current
+	ok = _exp(dealt > 0.0, "the sword swing damaged the enemy in front of it") and ok
+	ok = _exp(is_equal_approx(dealt, player.get_node("Stats").get_stat("attack")),
+		"the hit dealt the Stats attack amount, once (%d)" % int(player.get_node("Stats").get_stat("attack"))) and ok
 
 	# --- G) loot: table shape, drop spawn, flask heals ---
 	var table: LootTableLite = preload("res://game/dungeon/crypt_loot.tres")
