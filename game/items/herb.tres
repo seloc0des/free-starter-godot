@@ -1,0 +1,10 @@
+[gd_resource type="Resource" script_class="ItemLite" load_steps=3 format=3 uid="uid://cfsitemherb01"]
+
+[ext_resource type="Script" path="res://addons/inventory_lite/item_resource.gd" id="1"]
+[ext_resource type="Texture2D" path="res://game/art/flask_big_green.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "herb"
+name = "Meadow Herb"
+icon = ExtResource("2")

@@ -3,9 +3,11 @@
 A small, finished top-down game you can press Play on, plus every free SELODEV
 Lite system already sitting in the project. No coding required.
 
-The game is the same one from the Free Starter: walk around, talk to the Healer,
-take a quest, gather three herbs, save. What's different is what comes with it.
-Fourteen systems are in `addons/`, waiting for when your game needs one.
+Walk around, talk to the Healer, take a quest, gather three herbs into your bag,
+save. That little loop already runs on five systems: the Controller moves you,
+the Healer talks through Dialogue, the errand is a Quest, the herbs land in an
+Inventory bag (watch the count, top right), and Save keeps it all. Fourteen
+systems are in `addons/`, waiting for when your game needs the rest.
 
 ## Play it (Godot 4.3 or newer)
 
@@ -13,7 +15,8 @@ Open this folder in Godot and press **Play (F5)**.
 
 - **Move:** arrow keys or WASD
 - **Talk:** walk up to the Healer, the wizard under the banners, and press **Space** or **Enter**
-- **Gather** the three herbs that light up
+- **Gather** the three herbs that light up. Each one drops into your bag, and the
+  count sits top right.
 - **Save and Load:** buttons at the top right
 
 That loop of talk, quest, collect, save is a real game. The part that normally

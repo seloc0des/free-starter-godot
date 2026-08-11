@@ -4,6 +4,8 @@ extends Area2D
 # talk -> collect), then walk over it to collect. Collected state saves.
 
 @export var herb_id: String = "herb_1"
+@export var item: ItemLite
+@export var bag_path: NodePath
 
 var _collected: bool = false
 var _active: bool = false
@@ -38,6 +40,9 @@ func _on_body_entered(b: Node) -> void:
 func _collect() -> void:
 	_collected = true
 	_active = false
+	var bag := get_node_or_null(bag_path)
+	if bag != null and item != null:
+		bag.add_item(item, 1)
 	GameEvents.item_collected.emit("herb", 1)
 	visible = false
 	set_deferred("monitoring", false)
