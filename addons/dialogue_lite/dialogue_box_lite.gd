@@ -51,7 +51,10 @@ func _clear_choices() -> void:
 
 
 func _unhandled_input(event: InputEvent) -> void:
-	if not visible or _awaiting_choice:
+	if not visible:
 		return
 	if event.is_action_pressed(advance_action):
-		DialoguesLite.advance()
+		if not _awaiting_choice:
+			DialoguesLite.advance()
+		# consume it so a walk-up NPC doesn't re-trigger on the same press
+		get_viewport().set_input_as_handled()

@@ -1,0 +1,27 @@
+[
+  {
+    "id": "healer_intro",
+    "title": "Healer",
+    "entry": "n1",
+    "nodes": [
+      {
+        "id": "n1",
+        "speaker": "Healer",
+        "text": "Oh, thank goodness — will you help me?",
+        "choices": [
+          { "text": "Of course.", "next": "n2" },
+          { "text": "Maybe later.", "next": "bye" }
+        ]
+      },
+      {
+        "id": "n2",
+        "speaker": "Healer",
+        "text": "Bless you. Bring me 3 herbs from the meadow.",
+        "event": "give_quest:gather_herbs",
+        "next": "n3"
+      },
+      { "id": "n3", "speaker": "Healer", "text": "The meadow's just east of the well.", "next": "" },
+      { "id": "bye", "speaker": "Healer", "text": "...Come back if you change your mind.", "next": "" }
+    ]
+  }
+]

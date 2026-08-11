@@ -1,38 +1,53 @@
 # Make It Yours
 
-You don't need to code. Here's how to turn this starter into *your* game.
+You don't need to code. Here's how to turn this starter into your game.
 
-## 1. Change the story — `content/dialogue.json`
+Work down the **Start Here** panel on the right if you'd rather be walked through
+it. This file is the same route in longer form.
 
-It's the Healer's conversation. Edit each node's `speaker` and `text`, add nodes,
-and wire `choices` to other node ids. The node with
-`"event": "give_quest:gather_herbs"` is what hands out the quest.
+## 1. Change the story, in `content/dialogue.json`
 
-Prefer a visual editor? Enable **Dialogue — Lite** in Project Settings → Plugins
-and author it in the **Dialogue** dock.
+That file is the Healer's conversation. Edit each node's `speaker` and `text`, add
+nodes, and point `choices` at other node ids. The node carrying
+`"event": "give_quest:gather_herbs"` is the one that hands out the quest.
 
-## 2. Change the quest — `content/quests.json`
+If you'd rather do it visually, the **Dialogue** dock is already switched on, as a
+tab beside the Inspector.
 
-Edit the `title`, `description`, and the objective's `required` count. To gather
-something other than herbs, change the objective `target` and what the pickups
-emit (`GameEvents.item_collected.emit("<your_item>", 1)` in `game/herb.gd`).
+## 2. Change the quest, in `content/quests.json`
+
+Edit the `title`, the `description`, and the objective's `required` count. To
+gather something other than herbs, change the objective's `target` and change what
+the pickups announce, which is the
+`GameEvents.item_collected.emit("<your_item>", 1)` line in `game/herb.gd`.
 
 ## 3. Reskin it
 
-The player, Healer, and herbs are plain `ColorRect` rectangles in
-`game/world.tscn`. Replace each "Body" ColorRect with a `Sprite2D` and your PNG —
-same position, new look. Change `Ground`'s color for a new setting.
+The player, the Healer and the herbs are plain `ColorRect` rectangles in
+`game/world.tscn`. Replace each "Body" ColorRect with a `Sprite2D` and your own
+PNG, in the same position. Change the `Ground` colour for a different setting.
 
-## 4. Add more game (drop-in upgrades)
+## 4. Switch on the system your idea needs
 
-When you outgrow the free tier, add the full SELODEV packs — they share the same
-event bus, so they just work alongside this:
+Eleven more systems are in the project already, switched off. Open **Start Here**
+and tick one. Its dock appears beside the Inspector, and its autoload is already
+running, so there's nothing to wire.
 
-- **Inventory / Loot / Crafting** — real items for the herbs to go into.
-- **Vendor** — a shopkeeper NPC.
-- **Combat** — enemies, health, hitboxes (top-down ready).
-- **Dialogue (Pro)** — conditions, portraits, typewriter, branching logic in the dock.
+Some starting points:
 
-## 5. Publish your game
+- Want the herbs to become real items you carry? **Inventory**.
+- Want a second room? **Scene Flow** for doors and spawn points.
+- Want something to fight? **Combat** for damage, then **Enemy AI** for something
+  to fight with.
+- Want a shopkeeper? **Vendor**.
+- Want music that changes? **Audio**.
 
-MIT-licensed. Make it, rename it, sell it — that was the whole point.
+## 5. Grow out of the Lite tier
+
+Each Lite system is the free cut of a paid one. The full versions share the same
+event bus and drop into the same folder, so adding one doesn't mean rebuilding
+what you have. The catalogue is at https://selodev.itch.io.
+
+## 6. Publish it
+
+MIT licensed. Make it, rename it, sell it. That was the whole point.

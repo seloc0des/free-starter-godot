@@ -55,7 +55,7 @@ func _ready() -> void:
 
 	root.add_child(HSeparator.new())
 	var note := Label.new()
-	note.text = "It's your game — change it any time: re-pick and Apply, or tweak the Saveable node in the Inspector (edit which properties persist).\n\nSave / Load (Pro) unlocks no-code wiring: save menus, checkpoints (save on touch), autosave timers, and save-on-quit — plus multi-slot, encryption, and screenshots."
+	note.text = "It's your game. Change it any time: re-pick and Apply, or tweak the Saveable node in the Inspector (edit which properties persist).\n\nSave / Load (Pro) unlocks no-code wiring: save menus, checkpoints (save on touch), autosave timers, save-on-quit, multi-slot, encryption, and screenshots."
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.modulate = Color(0.72, 0.75, 0.82)
 	root.add_child(note)
@@ -93,9 +93,9 @@ func _apply_save_node(root: Node) -> void:
 	var props: PackedStringArray = sv.get("save_properties")
 	_select(sv)
 	if props.is_empty():
-		_say("Made %s saveable, but it had no obvious properties to persist — add them in the Inspector (save_properties)." % target.name, WARN_COLOR)
+		_say("Made %s saveable, but it had no obvious properties to persist. Add them in the Inspector (save_properties)." % target.name, WARN_COLOR)
 	else:
-		_say("Made %s saveable — persists %d propert%s. Tweak the list in the Inspector. Call SaveLite.save() to write, .load() to restore." % [target.name, props.size(), "y" if props.size() == 1 else "ies"], OK_COLOR)
+		_say("Made %s saveable. Persists %d propert%s. Tweak the list in the Inspector. Call SaveLite.save() to write, .load() to restore." % [target.name, props.size(), "y" if props.size() == 1 else "ies"], OK_COLOR)
 
 
 # --- pure wiring (no EditorInterface, so it's headless-testable) -----------
