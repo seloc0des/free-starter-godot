@@ -1,4 +1,4 @@
-[gd_scene load_steps=22 format=3 uid="uid://cfsworldsurv1"]
+[gd_scene load_steps=27 format=3 uid="uid://cfsworldsurv1"]
 
 [ext_resource type="Script" path="res://game/survival/survival_player.gd" id="1"]
 [ext_resource type="Script" path="res://game/survival/forage_pickup.gd" id="2"]
@@ -18,6 +18,12 @@
 [ext_resource type="Resource" path="res://game/survival/items/wood.tres" id="16"]
 [ext_resource type="Resource" path="res://game/survival/items/mushroom.tres" id="17"]
 [ext_resource type="Resource" path="res://game/survival/items/camp_chest.tres" id="18"]
+[ext_resource type="Script" path="res://game/survival/rake_pickup.gd" id="19"]
+[ext_resource type="Resource" path="res://game/survival/items/rake.tres" id="20"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/rake.png" id="21"]
+[ext_resource type="Script" path="res://addons/equipment_lite/equipment_lite.gd" id="22"]
+[ext_resource type="Script" path="res://addons/stats_skills_lite/stats_component_lite.gd" id="23"]
+[ext_resource type="Resource" path="res://game/survival/foraging_stat.tres" id="24"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(12, 12)
@@ -151,6 +157,11 @@ horizontal_alignment = 1
 [node name="Col" type="CollisionShape2D" parent="CampSpot"]
 shape = SubResource("3")
 
+[node name="Rake" type="Area2D" parent="."]
+position = Vector2(470, 380)
+script = ExtResource("19")
+item = ExtResource("20")
+
 [node name="Player" type="CharacterBody2D" parent="."]
 position = Vector2(380, 380)
 script = ExtResource("1")
@@ -159,6 +170,11 @@ script = ExtResource("1")
 offset = Vector2(0, -2)
 texture = ExtResource("7")
 
+[node name="Tool" type="Sprite2D" parent="Player"]
+visible = false
+position = Vector2(9, -2)
+texture = ExtResource("21")
+
 [node name="Col" type="CollisionShape2D" parent="Player"]
 shape = SubResource("1")
 
@@ -166,6 +182,13 @@ shape = SubResource("1")
 script = ExtResource("13")
 speed = 140.0
 save_id = "survival_player"
+
+[node name="Equipment" type="Node" parent="Player"]
+script = ExtResource("22")
+
+[node name="Stats" type="Node" parent="Player"]
+script = ExtResource("23")
+definitions = [ExtResource("24")]
 
 [node name="Camera2D" type="Camera2D" parent="Player"]
 zoom = Vector2(3, 3)
@@ -186,6 +209,11 @@ layout_mode = 2
 size_flags_horizontal = 3
 vertical_alignment = 1
 text = "Make camp."
+
+[node name="Foraging" type="Label" parent="HUD/Bar"]
+layout_mode = 2
+vertical_alignment = 1
+text = "Foraging: 1"
 
 [node name="Save" type="Button" parent="HUD/Bar"]
 layout_mode = 2

@@ -55,6 +55,11 @@ func _run() -> void:
 	await _wait(0.5)
 	await _shot("survival_clearing")
 
+	# grab the rake first — Foraging jumps to 2, the tool shows on the belt
+	_world.get_node("Rake")._on_body_entered(player)
+	await _wait(0.4)
+	await _shot("survival_rake")
+
 	_world.get_node("Wood1")._collect()
 	await _wait(0.35)
 	_world.get_node("Mushroom1")._collect()

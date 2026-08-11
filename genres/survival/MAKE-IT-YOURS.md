@@ -20,6 +20,15 @@ pickup in `game/world_survival.tscn` that item, and add its id to the quest.
 Select `CampSpot` in the scene. `wood_needed` is in the Inspector. Point
 `chest_item` at any item resource and you are crafting something else.
 
+## 3b. Change the rake and Foraging
+
+The rake is `game/survival/items/rake.tres`, an Equipment item that slots into
+`weapon_main`. `game/survival/foraging_stat.tres` is the Foraging value every
+gather reads, and the rake's +1 bonus is one modifier line in
+`game/survival/survival_player.gd`. Make the rake worth more, or hand out a
+second tool that stacks. The full Equipment and Stats systems add real gear
+slots, skill points and modifier math.
+
 ## 4. Reskin it
 
 Every texture lives in `game/art/kenney/` as a plain PNG (CC0 pixel art from

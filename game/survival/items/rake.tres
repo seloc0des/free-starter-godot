@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemLite" load_steps=3 format=3 uid="uid://cfsitemrake01"]
+
+[ext_resource type="Script" path="res://addons/inventory_lite/item_resource.gd" id="1"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/rake.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "rake"
+name = "Forager's Rake"
+icon = ExtResource("2")
+metadata = {
+"equip_slot": "weapon_main"
+}
