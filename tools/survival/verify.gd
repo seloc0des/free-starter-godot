@@ -68,20 +68,35 @@ func _ready() -> void:
 	var player: CharacterBody2D = world.get_node("Player")
 	ok = _exp(player.is_in_group("player"), "mover put the player in the player group") and ok
 
-	# --- C) gather everything ---
+	# --- F) rake: equipping it raises Foraging, which drives gather yield ---
+	var rake_node: Area2D = world.get_node("Rake")
+	ok = _exp(rake_node != null, "the forager's rake is in the clearing") and ok
+	var stats: StatsComponentLite = player.get_node("Stats")
+	ok = _exp(int(stats.get_stat("foraging")) == 1, "Foraging starts at 1") and ok
+	rake_node._on_body_entered(player)
+	await get_tree().process_frame
+	ok = _exp(player.get_node("Equipment").get_equipped("weapon_main") != null, "rake equips into weapon_main") and ok
+	ok = _exp(int(stats.get_stat("foraging")) == 2, "the rake raised Foraging 1 -> 2") and ok
+
+	# --- C) gather everything (the rake doubles each pull) ---
+	var wood_item := preload("res://game/survival/items/wood.tres")
+	var mush_item := preload("res://game/survival/items/mushroom.tres")
 	var bag: InventoryLite = world.get_node("CampBag")
-	for p in woods + shrooms:
+	woods[0]._collect()
+	await get_tree().process_frame
+	ok = _exp(bag.count_item(wood_item) == 2, "with the rake, one wood pull brings back 2") and ok
+	for p in woods.slice(1) + shrooms:
 		p._collect()
 		await get_tree().process_frame
-	ok = _exp(bag.count_item(preload("res://game/survival/items/wood.tres")) == 3, "bag holds 3 wood") and ok
-	ok = _exp(bag.count_item(preload("res://game/survival/items/mushroom.tres")) == 2, "bag holds 2 mushrooms") and ok
+	ok = _exp(bag.count_item(wood_item) == 6, "3 wood pulls at Foraging 2 = 6 wood") and ok
+	ok = _exp(bag.count_item(mush_item) == 4, "2 mushroom pulls at Foraging 2 = 4") and ok
 
 	# --- D) craft at the camp spot ---
 	station._on_body_entered(player)
 	await get_tree().process_frame
 	ok = _exp(station._crafted, "walking up with the wood crafts the chest") and ok
-	ok = _exp(bag.count_item(preload("res://game/survival/items/wood.tres")) == 0, "crafting consumed the wood") and ok
-	ok = _exp(_completed, "camp made — quest completed") and ok
+	ok = _exp(bag.count_item(wood_item) == 3, "crafting spent 3 of the 6 wood") and ok
+	ok = _exp(_completed, "camp made, quest completed") and ok
 
 	# --- E) save round-trip via the Controller mover contract ---
 	player.global_position = Vector2(333, 444)

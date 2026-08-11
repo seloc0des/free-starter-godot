@@ -4,6 +4,7 @@ extends CanvasLayer
 # the active quest so the first gather reads against the full count.
 
 @onready var _status: Label = $Bar/Status
+@onready var _foraging: Label = $Bar/Foraging
 
 var _progress: Dictionary = {}
 
@@ -14,7 +15,14 @@ func _ready() -> void:
 	$Bar/Save.pressed.connect(func() -> void: SaveLite.save())
 	$Bar/Load.pressed.connect(func() -> void: SaveLite.load())
 
-	_status.text = "Make camp — gather what the forest offers."
+	_status.text = "Make camp. Gather what the forest offers."
+	for p in get_tree().get_nodes_in_group("player"):
+		if p.has_node("Stats"):
+			var s: StatsComponentLite = p.get_node("Stats")
+			_foraging.text = "Foraging: %d" % int(s.get_stat("foraging"))
+			s.stat_changed.connect(func(id: String, v: float) -> void:
+				if id == "foraging": _foraging.text = "Foraging: %d" % int(v))
+			break
 	_seed_totals()
 	QuestsLite.quest_started.connect(func(_id: String) -> void: _seed_totals())
 	QuestsLite.objective_progressed.connect(_on_progress)
