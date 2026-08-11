@@ -16,11 +16,11 @@
       {
         "id": "n2",
         "speaker": "Healer",
-        "text": "Bless you. Bring me 3 herbs from the meadow.",
+        "text": "Bless you. Bring me 3 herbs from the old cellar.",
         "event": "give_quest:gather_herbs",
         "next": "n3"
       },
-      { "id": "n3", "speaker": "Healer", "text": "The meadow's just east of the well.", "next": "" },
+      { "id": "n3", "speaker": "Healer", "text": "They're scattered around the cellar. Look for the green flasks.", "next": "" },
       { "id": "bye", "speaker": "Healer", "text": "...Come back if you change your mind.", "next": "" }
     ]
   }

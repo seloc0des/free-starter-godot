@@ -12,6 +12,7 @@ Thumbs.db
 
 # Promo assets + capture tooling — not part of the template
 marketing/
+.capture/
 tools/capture.gd
 tools/capture.gd.uid
 tools/capture.tscn

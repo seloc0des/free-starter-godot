@@ -5,6 +5,8 @@ extends CharacterBody2D
 
 @export var speed: float = 150.0
 
+@onready var _sprite: AnimatedSprite2D = $Sprite
+
 
 func _ready() -> void:
 	add_to_group("player")
@@ -14,10 +16,17 @@ func _ready() -> void:
 func _physics_process(_delta: float) -> void:
 	if DialoguesLite.is_active():
 		velocity = Vector2.ZERO
+		_sprite.play("idle")
 		return
 	var dir := Input.get_vector("ui_left", "ui_right", "ui_up", "ui_down")
 	velocity = dir * speed
 	move_and_slide()
+	if velocity.length_squared() > 1.0:
+		_sprite.play("run")
+		if absf(velocity.x) > 0.0:
+			_sprite.flip_h = velocity.x < 0.0
+	else:
+		_sprite.play("idle")
 
 
 # --- lite Save contract ---

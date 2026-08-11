@@ -12,7 +12,7 @@ Fourteen systems are in `addons/`, waiting for when your game needs one.
 Open this folder in Godot and press **Play (F5)**.
 
 - **Move:** arrow keys or WASD
-- **Talk:** walk up to the Healer, the green one, and press **Space** or **Enter**
+- **Talk:** walk up to the Healer, the wizard under the banners, and press **Space** or **Enter**
 - **Gather** the three herbs that light up
 - **Save and Load:** buttons at the top right
 
@@ -57,6 +57,8 @@ Settings then Plugins if you prefer. Switching one off deletes nothing.
 - `content/*.json` is the game's data, the conversation and the quest. Edit these
   to change the game. No scripts involved.
 - `game/` is the world, the player, the NPC, the herb pickups.
+- `game/art/` is the pixel art, CC0 from 0x72's DungeonTileset II. Swap a PNG
+  with your own and the game picks it up. Credits live in `CREDITS.md`.
 - `chassis/` is the glue that boots the systems from `content/`. You won't need
   to touch it.
 - `addons/` holds the fourteen Lite systems and their no-code editor docks.
@@ -86,8 +88,9 @@ to be rebuilt. The full catalogue is at https://selodev.itch.io.
 ## Make it yours
 
 See **MAKE-IT-YOURS.md**. The short version: change the words in `content/`, swap
-the coloured squares for your art, and switch on whatever system your idea needs.
+the PNGs in `game/art/` for your art, and switch on whatever system your idea needs.
 
 ## License
 
-MIT. Make it, rename it, ship it, sell it. That's the point.
+MIT for the kit. The art is CC0, credited in `CREDITS.md`. Make it, rename it,
+ship it, sell it. That's the point.
