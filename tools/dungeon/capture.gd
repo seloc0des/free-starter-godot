@@ -58,12 +58,16 @@ func _run() -> void:
 	# trade blows: get hurt, swing, drop two goblins
 	player.get_node("Health").take_damage(30.0)
 	player.attack()
+	# guarantee a flask so the drop shows in frame
+	var sure := LootTableLite.new()
+	sure.entries = [LootTableLite.entry(preload("res://game/dungeon/items/flask_big.tres"), 1)]
+	_world.get_node("Goblin1").loot_table = sure
 	_world.get_node("Goblin1").get_node("Hurt").receive_hit(999.0, player)
-	await _wait(0.06)
+	await _wait(0.2)
 	await _shot("dungeon_fight")
 	_world.get_node("Goblin2").get_node("Hurt").receive_hit(999.0, player)
 	await _wait(0.5)
-	await _shot("dungeon_progress")
+	await _shot("dungeon_loot")
 
 	for n in ["Goblin3", "Skeleton1", "Skeleton2"]:
 		_world.get_node(n).get_node("Hurt").receive_hit(999.0, player)

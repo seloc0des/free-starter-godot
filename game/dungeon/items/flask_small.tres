@@ -1,0 +1,13 @@
+[gd_resource type="Resource" script_class="ItemLite" load_steps=3 format=3 uid="uid://cfsflasksm001"]
+
+[ext_resource type="Script" path="res://addons/inventory_lite/item_resource.gd" id="1"]
+[ext_resource type="Texture2D" path="res://game/art/flask_red.png" id="2"]
+
+[resource]
+script = ExtResource("1")
+id = "flask_small"
+name = "Small Healing Flask"
+icon = ExtResource("2")
+metadata = {
+"heal": 25.0
+}

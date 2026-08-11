@@ -1,0 +1,9 @@
+[gd_resource type="Resource" script_class="StatDefinitionLite" load_steps=2 format=3 uid="uid://cfsdunattack1"]
+
+[ext_resource type="Script" path="res://addons/stats_skills_lite/stat_definition_lite.gd" id="1"]
+
+[resource]
+script = ExtResource("1")
+id = "attack"
+display_name = "Attack"
+base_value = 25.0

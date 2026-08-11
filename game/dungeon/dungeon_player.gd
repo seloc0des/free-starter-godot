@@ -4,13 +4,13 @@ extends CharacterBody2D
 # script owns what's on top: facing, the sword swing (a HitboxLite pulse), and
 # getting hurt. Dies politely — back to the spawn point at full health.
 
-@export var attack_damage: float = 25.0
 @export var attack_cooldown: float = 0.35
 
 @onready var _sprite: AnimatedSprite2D = $Sprite
 @onready var _attack: HitboxLite = $Attack
 @onready var _sword: Sprite2D = $Sword
 @onready var _health: HealthLite = $Health
+@onready var _stats: StatsComponentLite = $Stats
 
 var _facing := Vector2.RIGHT
 var _cooldown := 0.0
@@ -20,7 +20,6 @@ var _spawn := Vector2.ZERO
 func _ready() -> void:
 	_spawn = global_position
 	_attack.monitoring = false
-	_attack.damage = attack_damage
 	_sword.visible = false
 	_health.died.connect(_on_died)
 	$Hurt.hit.connect(func(_amount: float, _source: Node) -> void: _flash(Color(1, 0.4, 0.4)))
@@ -47,6 +46,8 @@ func attack() -> void:
 	if _cooldown > 0.0:
 		return
 	_cooldown = attack_cooldown
+	# damage lives in the Stats component, same math the RPG kit uses
+	_attack.damage = _stats.get_stat("attack")
 	_attack.position = _facing * 18.0
 	_attack.monitoring = true
 	_sword.position = _facing * 14.0

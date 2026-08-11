@@ -77,8 +77,47 @@ func _ready() -> void:
 	ok = _exp(player.global_position.is_equal_approx(spawn), "death respawns the knight at the door") and ok
 	ok = _exp(player.get_node("Health").is_alive(), "and revives at full health") and ok
 
-	# --- C) kill them all through the hurtboxes ---
-	for e in goblins + skeletons:
+	# --- F) stats drive the sword ---
+	player.attack()
+	ok = _exp(player.get_node("Attack").damage == player.get_node("Stats").get_stat("attack"),
+		"sword damage reads from the Stats component") and ok
+
+	# --- G) loot: table shape, drop spawn, flask heals ---
+	var table: LootTableLite = preload("res://game/dungeon/crypt_loot.tres")
+	ok = _exp(table.entries.size() == 3, "crypt table has 3 entries (small, big, nothing)") and ok
+	var seen := {"flask_small": false, "flask_big": false, "nothing": false}
+	var rng := RandomNumberGenerator.new()
+	for i in 200:
+		rng.seed = i
+		var rolled: Array = table.roll(rng)
+		if rolled.is_empty() or rolled[0].get("item") == null:
+			seen["nothing"] = true
+		else:
+			seen[rolled[0].get("item").id] = true
+	ok = _exp(seen["flask_small"] and seen["flask_big"] and seen["nothing"],
+		"200 seeded rolls hit all three outcomes") and ok
+
+	var sure_drop := LootTableLite.new()
+	sure_drop.entries = [LootTableLite.entry(preload("res://game/dungeon/items/flask_small.tres"), 1)]
+	goblins[0].loot_table = sure_drop
+	goblins[0].get_node("Hurt").receive_hit(999.0, null)
+	await get_tree().process_frame
+	await get_tree().process_frame
+	var dropped := false
+	for c in world.get_children():
+		if c is CryptDrop:
+			dropped = true
+	ok = _exp(dropped, "a guaranteed table left a drop where the goblin fell") and ok
+
+	player.get_node("Health").take_damage(30.0)
+	var before: float = player.get_node("Health").current
+	for c in world.get_children():
+		if c is CryptDrop:
+			c._on_body_entered(player)
+	ok = _exp(player.get_node("Health").current == before + 25.0, "the small flask healed 25") and ok
+
+	# --- C) kill the rest through the hurtboxes ---
+	for e in goblins.slice(1) + skeletons:
 		e.get_node("Hurt").receive_hit(999.0, null)
 		await get_tree().process_frame
 	ok = _exp(_completed, "clearing the roster completed the quest") and ok

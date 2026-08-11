@@ -5,6 +5,8 @@ extends CharacterBody2D
 # death so the kill quest can count it.
 
 @export var enemy_id: String = "goblin"
+## What this monster leaves behind, rolled by Loot Lite. Empty = never drops.
+@export var loot_table: LootTableLite
 
 @onready var _sprite: AnimatedSprite2D = $Sprite
 @onready var _health: HealthLite = $Health
@@ -34,6 +36,7 @@ func _on_died() -> void:
 		return
 	_dead = true
 	GameEvents.enemy_defeated.emit(enemy_id)
+	_drop_loot()
 	_brain.enabled = false
 	$Col.set_deferred("disabled", true)
 	$Hurt.set_deferred("monitorable", false)
@@ -41,6 +44,19 @@ func _on_died() -> void:
 	var tween := create_tween()
 	tween.tween_property(self, "modulate:a", 0.0, 0.25)
 	tween.tween_callback(func() -> void: visible = false)
+
+
+func _drop_loot() -> void:
+	if loot_table == null:
+		return
+	for rolled in loot_table.roll():
+		var dropped: Variant = rolled.get("item")
+		if dropped == null:
+			continue
+		var drop := CryptDrop.new()
+		drop.item = dropped
+		drop.global_position = global_position
+		get_parent().add_child.call_deferred(drop)
 
 
 func _flash() -> void:
