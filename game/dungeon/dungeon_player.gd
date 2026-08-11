@@ -4,10 +4,12 @@ extends CharacterBody2D
 # script owns what's on top: facing, the sword swing (a HitboxLite pulse), and
 # getting hurt. Dies politely — back to the spawn point at full health.
 
+const PLAYER_TEAM := 0
+
 @export var attack_cooldown: float = 0.35
 
 @onready var _sprite: AnimatedSprite2D = $Sprite
-@onready var _attack: HitboxLite = $Attack
+@onready var _attack: Area2D = $Attack
 @onready var _sword: Sprite2D = $Sword
 @onready var _health: HealthLite = $Health
 @onready var _stats: StatsComponentLite = $Stats
@@ -46,16 +48,32 @@ func attack() -> void:
 	if _cooldown > 0.0:
 		return
 	_cooldown = attack_cooldown
-	# damage lives in the Stats component, same math the RPG kit uses
-	_attack.damage = _stats.get_stat("attack")
 	_attack.position = _facing * 18.0
-	_attack.monitoring = true
 	_sword.position = _facing * 14.0
 	_sword.rotation = _facing.angle() + PI / 2.0
 	_sword.visible = true
-	get_tree().create_timer(0.12).timeout.connect(func() -> void:
-		_attack.set_deferred("monitoring", false)
-		_sword.visible = false)
+	get_tree().create_timer(0.12).timeout.connect(func() -> void: _sword.visible = false)
+	_strike()
+
+
+# Poll the hitbox for overlapping enemy hurtboxes across the whole swing and
+# damage each one once. Querying overlaps is deterministic; relying on
+# area_entered to fire when you toggle monitoring on an already-overlapping area
+# is not, which is why the swing used to whiff. Polling a few frames also lets
+# a monster that steps into the arc mid-swing still take the hit.
+func _strike() -> void:
+	_attack.monitoring = true
+	var struck := {}
+	for _i in 6:
+		await get_tree().physics_frame
+		if not is_instance_valid(_attack):
+			return
+		var dmg := _stats.get_stat("attack")   # same Stats math the RPG kit uses
+		for area in _attack.get_overlapping_areas():
+			if area is HurtboxLite and area.team != PLAYER_TEAM and not struck.has(area):
+				struck[area] = true
+				area.receive_hit(dmg, _attack)
+	_attack.monitoring = false
 
 
 func _on_died() -> void:

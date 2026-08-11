@@ -55,7 +55,7 @@ func _ready() -> void:
 
 	root.add_child(HSeparator.new())
 	root.add_child(_h("2.  The fourteen systems"))
-	var note := _wrap("Three are on already, because the story game uses them. The rest are off so the editor stays readable. Switch one on and its dock appears with the Inspector on the right.")
+	var note := _wrap("The ones this game uses are on already. The rest are off so the editor stays readable. Switch one on and its dock appears with the Inspector on the right.")
 	note.modulate = DIM_COLOR
 	root.add_child(note)
 
@@ -109,16 +109,18 @@ func _edited(path: String) -> bool:
 
 func _state() -> Dictionary:
 	var enabled := _enabled_plugins()
+	var active := StarterPlan.active_systems(StarterPlan.genre_config())
 	var extra := 0
 	for s in StarterPlan.SYSTEMS:
 		var id := String(s["id"])
-		if not bool(s["in_story"]) and StarterPlan.is_on(id, enabled):
+		if not active.has(id) and StarterPlan.is_on(id, enabled):
 			extra += 1
 	return {
 		"played": _played,
 		"edited_dialogue": _edited("res://content/dialogue.json"),
 		"edited_quests": _edited("res://content/quests.json"),
 		"extra_on": extra,
+		"has_dialogue": FileAccess.file_exists("res://content/dialogue.json"),
 	}
 
 
@@ -147,8 +149,9 @@ func _refresh() -> void:
 		_list.add_child(_step_row(s))
 
 	var enabled := _enabled_plugins()
+	var active := StarterPlan.active_systems(StarterPlan.genre_config())
 	for s in StarterPlan.SYSTEMS:
-		_systems_box.add_child(_system_row(s, enabled))
+		_systems_box.add_child(_system_row(s, enabled, active))
 
 
 func _step_row(step: Dictionary) -> Control:
@@ -190,7 +193,7 @@ func _step_row(step: Dictionary) -> Control:
 	return box
 
 
-func _system_row(spec: Dictionary, enabled: PackedStringArray) -> Control:
+func _system_row(spec: Dictionary, enabled: PackedStringArray, active: Array[String]) -> Control:
 	var id := String(spec["id"])
 	var on := StarterPlan.is_on(id, enabled)
 
@@ -205,7 +208,7 @@ func _system_row(spec: Dictionary, enabled: PackedStringArray) -> Control:
 	check.toggled.connect(_on_toggle.bind(id))
 	head.add_child(check)
 
-	if bool(spec["in_story"]):
+	if active.has(id):
 		var tag := Label.new()
 		tag.text = "used by the game"
 		tag.modulate = DIM_COLOR
@@ -242,7 +245,7 @@ func _on_open(path: String) -> void:
 
 func _on_play() -> void:
 	_played = true
-	_say("Running the game. Arrow keys to walk, Enter to talk.", OK_COLOR)
+	_say("Running the game. Arrow keys or WASD to move.", OK_COLOR)
 	EditorInterface.play_main_scene()
 	_refresh()
 

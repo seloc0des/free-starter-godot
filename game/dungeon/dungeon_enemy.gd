@@ -61,5 +61,12 @@ func _drop_loot() -> void:
 
 func _flash() -> void:
 	_sprite.modulate = Color(3, 3, 3)
+	_spark()
 	get_tree().create_timer(0.1).timeout.connect(func() -> void:
 		_sprite.modulate = Color.WHITE)
+
+
+func _spark() -> void:
+	var spark := HitSpark.new()
+	spark.global_position = global_position
+	get_parent().add_child.call_deferred(spark)

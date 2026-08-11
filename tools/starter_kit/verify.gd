@@ -18,7 +18,7 @@ func _ready() -> void:
 
 	_catalogue()
 	_switches()
-	_story()
+	_genre()
 	_checklist()
 	_shipped_defaults()
 
@@ -73,35 +73,55 @@ func _switches() -> void:
 	_ok(StarterPlan.label_for("nope_lite") == "nope_lite", "label_for falls back to the id it was given")
 
 
-func _story() -> void:
-	var story := StarterPlan.story_systems()
-	_ok(story.size() == 3, "three systems are marked as used by the story game (got %d)" % story.size())
-	_ok("dialogue_lite" in story and "quests_lite" in story and "save_load_lite" in story,
-		"the three are dialogue, quests and save/load")
+# The dock reads which systems the game boots with from content/game.json. This
+# runs inside each genre kit, so it checks the real config it shipped with.
+func _genre() -> void:
+	var cfg := StarterPlan.genre_config()
+	_ok(not cfg.is_empty(), "content/game.json parses")
+	_ok(String(cfg.get("genre", "")) != "", "game.json names a genre (got '%s')" % cfg.get("genre", ""))
+
+	var active := StarterPlan.active_systems(cfg)
+	_ok(active.size() >= 3, "the game boots with at least three systems (got %d)" % active.size())
+
+	var bad := 0
+	for id in active:
+		if StarterPlan.system(id).is_empty():
+			bad += 1
+			push_warning("active system %s is not in the catalogue" % id)
+	_ok(bad == 0, "every active system is a known lite pack")
+
+	# save/quests are the spine every genre carries
+	_ok("save_load_lite" in active and "quests_lite" in active,
+		"save and quests are among the active systems")
 
 	var all_on := PackedStringArray()
-	for id in story:
+	for id in active:
 		all_on.append(CFG % id)
-	_ok(StarterPlan.missing_story_systems(all_on).is_empty(), "nothing reported missing when all three are on")
-	_ok(StarterPlan.missing_story_systems(PackedStringArray()).size() == 3,
-		"all three reported missing when none are on")
+	_ok(StarterPlan.missing_active_systems(cfg, all_on).is_empty(), "nothing reported missing when the active set is on")
+	_ok(StarterPlan.missing_active_systems(cfg, PackedStringArray()).size() == active.size(),
+		"all active systems reported missing when none are on")
 
 
 func _checklist() -> void:
-	var fresh: Array[Dictionary] = StarterPlan.steps({})
-	_ok(fresh.size() == 4, "four steps in the checklist (got %d)" % fresh.size())
-	_ok(StarterPlan.remaining(fresh) == 4, "a fresh project has everything left to do")
+	# no dialogue.json (dungeon / survival): play, goal, systems
+	var no_dlg: Array[Dictionary] = StarterPlan.steps({})
+	_ok(no_dlg.size() == 3, "three steps without a dialogue file (got %d)" % no_dlg.size())
+	_ok(StarterPlan.remaining(no_dlg) == 3, "a fresh project has everything left to do")
+
+	# with dialogue.json (story / rpg): the extra "change what a character says"
+	var with_dlg: Array[Dictionary] = StarterPlan.steps({"has_dialogue": true})
+	_ok(with_dlg.size() == 4, "four steps when a dialogue file ships (got %d)" % with_dlg.size())
 
 	var done: Array[Dictionary] = StarterPlan.steps({
-		"played": true, "edited_dialogue": true, "edited_quests": true, "extra_on": 1,
+		"has_dialogue": true, "played": true, "edited_dialogue": true, "edited_quests": true, "extra_on": 1,
 	})
-	_ok(StarterPlan.remaining(done) == 0, "all four tick off when the project shows the work")
+	_ok(StarterPlan.remaining(done) == 0, "all steps tick off when the project shows the work")
 
 	var half: Array[Dictionary] = StarterPlan.steps({"played": true, "extra_on": 0})
-	_ok(StarterPlan.remaining(half) == 3, "partial progress counts correctly (got %d left)" % StarterPlan.remaining(half))
+	_ok(StarterPlan.remaining(half) == 2, "partial progress counts correctly (got %d left)" % StarterPlan.remaining(half))
 
 	var blank_why := 0
-	for s in fresh:
+	for s in with_dlg:
 		if String(s.get("why", "")).is_empty() or String(s.get("title", "")).is_empty():
 			blank_why += 1
 	_ok(blank_why == 0, "every step says what it is and why")
@@ -109,11 +129,14 @@ func _checklist() -> void:
 
 # The dock decides "have they edited it yet" by diffing against a .orig copy.
 # If those go missing the steps silently never tick, so the suite guards them.
+# quests.json is universal; dialogue.json only ships in genres that talk.
 func _shipped_defaults() -> void:
+	_ok(FileAccess.file_exists("res://content/quests.json"), "content/quests.json ships with the project")
 	for f in ["res://content/dialogue.json", "res://content/quests.json"]:
-		_ok(FileAccess.file_exists(f), "%s ships with the project" % f)
+		if not FileAccess.file_exists(f):
+			continue
 		_ok(FileAccess.file_exists(f + ".orig"), "%s.orig ships alongside it" % f)
-		if FileAccess.file_exists(f) and FileAccess.file_exists(f + ".orig"):
+		if FileAccess.file_exists(f + ".orig"):
 			_ok(FileAccess.get_file_as_string(f) == FileAccess.get_file_as_string(f + ".orig"),
 				"%s matches its .orig out of the box" % f)
 

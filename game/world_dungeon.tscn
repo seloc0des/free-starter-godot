@@ -284,8 +284,6 @@ team = 0
 shape = SubResource("5")
 
 [node name="Attack" type="Area2D" parent="Player"]
-script = ExtResource("17")
-team = 0
 
 [node name="Col" type="CollisionShape2D" parent="Player/Attack"]
 shape = SubResource("3")
