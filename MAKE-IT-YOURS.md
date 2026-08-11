@@ -33,17 +33,18 @@ that export automatically.
 
 ## 4. Switch on the system your idea needs
 
-Eleven more systems are in the project already, switched off. Open **Start Here**
+Nine more systems are in the project already, switched off. Open **Start Here**
 and tick one. Its dock appears beside the Inspector, and its autoload is already
-running, so there's nothing to wire.
+running, so there's nothing to wire. The herbs already carry into a real
+Inventory bag and the Controller moves you, so five are on out of the box.
 
 Some starting points:
 
-- Want the herbs to become real items you carry? **Inventory**.
 - Want a second room? **Scene Flow** for doors and spawn points.
 - Want something to fight? **Combat** for damage, then **Enemy AI** for something
   to fight with.
 - Want a shopkeeper? **Vendor**.
+- Want gear that changes your stats? **Equipment** and **Stats / Skills**.
 - Want music that changes? **Audio**.
 
 ## 5. Grow out of the Lite tier

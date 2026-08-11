@@ -1,5 +1,5 @@
 {
   "title": "SELODEV Free Starter Kit",
   "genre": "story",
-  "systems": ["save", "quests", "dialogue"]
+  "systems": ["save", "quests", "dialogue", "inventory", "controller"]
 }
