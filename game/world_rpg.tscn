@@ -1,4 +1,4 @@
-[gd_scene load_steps=24 format=3 uid="uid://cfsworldrpg01"]
+[gd_scene load_steps=25 format=3 uid="uid://cfsworldrpg01"]
 
 [ext_resource type="Script" path="res://game/rpg/rpg_player.gd" id="1"]
 [ext_resource type="Script" path="res://game/rpg/coin_pickup.gd" id="2"]
@@ -20,6 +20,7 @@
 [ext_resource type="Resource" path="res://game/rpg/items/sword.tres" id="18"]
 [ext_resource type="Resource" path="res://game/rpg/attack_stat.tres" id="19"]
 [ext_resource type="Script" path="res://addons/inventory_lite/inventory_lite.gd" id="20"]
+[ext_resource type="PackedScene" path="res://addons/dialogue_lite/dialogue_box_lite.tscn" id="21"]
 
 [sub_resource type="RectangleShape2D" id="1"]
 size = Vector2(12, 12)
@@ -193,6 +194,7 @@ zoom = Vector2(3, 3)
 
 [node name="HUD" type="CanvasLayer" parent="."]
 script = ExtResource("4")
+satchel_path = NodePath("../Satchel")
 
 [node name="Bar" type="HBoxContainer" parent="HUD"]
 anchor_right = 1.0
@@ -206,6 +208,11 @@ theme_override_constants/separation = 12
 layout_mode = 2
 vertical_alignment = 1
 text = "Gold: 0"
+
+[node name="Satchel" type="Label" parent="HUD/Bar"]
+layout_mode = 2
+vertical_alignment = 1
+text = "Satchel: empty"
 
 [node name="Status" type="Label" parent="HUD/Bar"]
 layout_mode = 2
@@ -225,3 +232,5 @@ text = "Save"
 [node name="Load" type="Button" parent="HUD/Bar"]
 layout_mode = 2
 text = "Load"
+
+[node name="DialogueBoxLite" parent="HUD" instance=ExtResource("21")]

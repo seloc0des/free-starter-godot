@@ -67,23 +67,32 @@ func _ready() -> void:
 	var stats: StatsComponentLite = player.get_node("Stats")
 	ok = _exp(int(stats.get_stat("attack")) == 5, "base Attack is 5") and ok
 
-	# --- C) broke shopping refused, then coins pay ---
-	stall._on_body_entered(player)
+	# register the shopkeeper dialogue the way the chassis would
+	_register_dialogue()
+	ok = _exp(DialoguesLite.is_registered("shopkeeper"), "shopkeeper dialogue registered") and ok
+	var satchel: InventoryLite = world.get_node("Satchel")
+
+	# --- F) the shopkeeper talks; buying while broke is refused ---
+	DialoguesLite.start("shopkeeper")
+	ok = _exp(DialoguesLite.is_active(), "walking up starts the shopkeeper dialogue") and ok
+	DialoguesLite.choose(0)   # "Buy the sword" -> fires buy_sword
 	await get_tree().process_frame
-	ok = _exp(not stall._sold, "no gold, no sword") and ok
+	ok = _exp(not stall._sold, "no gold, no sale") and ok
 	for c in coins:
 		c._collect()
 		await get_tree().process_frame
 	ok = _exp(wallet.get_balance() == 5, "5 coins landed in the wallet") and ok
 
-	# --- D) buy, equip, level the stat, finish ---
-	stall._on_body_entered(player)
+	# --- D) talk, buy, the sword lands in the satchel, equips, levels the stat ---
+	DialoguesLite.start("shopkeeper")
+	DialoguesLite.choose(0)
 	await get_tree().process_frame
 	ok = _exp(stall._sold, "with 5 gold the sword sells") and ok
 	ok = _exp(wallet.get_balance() == 0, "the vendor took the gold") and ok
+	ok = _exp(satchel.count_item(preload("res://game/rpg/items/sword.tres")) == 1, "the sword went into the satchel (Inventory)") and ok
 	ok = _exp(player.get_node("Equipment").get_equipped("weapon_main") != null, "sword sits in weapon_main") and ok
 	ok = _exp(int(stats.get_stat("attack")) == 10, "Attack rose 5 -> 10 from the gear modifier") and ok
-	ok = _exp(_completed, "geared up — quest completed") and ok
+	ok = _exp(_completed, "geared up, quest completed") and ok
 
 	# --- E) save round-trip via the Controller mover contract ---
 	player.global_position = Vector2(333, 444)
@@ -94,6 +103,35 @@ func _ready() -> void:
 
 	print("=== ", "PASS" if ok else "FAIL", " ===")
 	get_tree().quit(0 if ok else 1)
+
+
+func _register_dialogue() -> void:
+	for entry in _load_json_array(content_dir + "dialogue.json"):
+		var dd: Dictionary = entry
+		var dialogue := DialogueLite.new()
+		dialogue.id = String(dd.get("id", ""))
+		dialogue.title = String(dd.get("title", ""))
+		dialogue.entry = String(dd.get("entry", ""))
+		var built: Array[DialogueNodeLite] = []
+		for n in dd.get("nodes", []):
+			var nd: Dictionary = n
+			var node := DialogueNodeLite.new()
+			node.id = String(nd.get("id", ""))
+			node.speaker = String(nd.get("speaker", ""))
+			node.text = String(nd.get("text", ""))
+			node.next = String(nd.get("next", ""))
+			node.event = String(nd.get("event", ""))
+			var choices: Array[DialogueChoiceLite] = []
+			for c in nd.get("choices", []):
+				var cd: Dictionary = c
+				var choice := DialogueChoiceLite.new()
+				choice.text = String(cd.get("text", ""))
+				choice.next = String(cd.get("next", ""))
+				choices.append(choice)
+			node.choices = choices
+			built.append(node)
+		dialogue.nodes = built
+		DialoguesLite.register(dialogue)
 
 
 func _exp(cond: bool, label: String) -> bool:

@@ -3,12 +3,14 @@
 A small, finished town-square errand you can press Play on, plus every free
 SELODEV Lite system already sitting in the project. No coding required.
 
-Gather the town's lost coins, buy the traveler's sword at the market stall, and
-equip it. Movement is the Controller system, your gold is the Vendor system's
-wallet, the purchase is a real Vendor transaction, the sword sits in the
-Equipment system's weapon slot, and equipping it raises your Attack through the
-Stats system's modifier math. The checklist is a Quest. All fourteen Lite
-systems are in `addons/`, wired through one event bus.
+Gather the town's lost coins, talk to the shopkeeper, buy the traveler's sword,
+and equip it. Movement is the Controller system, the shopkeeper greets you
+through the Dialogue system, your gold is the Vendor system's wallet, the
+purchase is a real Vendor transaction that drops the sword into your Inventory
+satchel, the sword sits in the Equipment system's weapon slot, and equipping it
+raises your Attack through the Stats system's modifier math. The checklist is a
+Quest. That is eight Lite systems in one small game. All fourteen are in
+`addons/`, wired through one event bus.
 
 ## Play it (Godot 4.3 or newer)
 
@@ -16,17 +18,18 @@ Open this folder in Godot and press **Play (F5)**.
 
 - **Move:** arrow keys or WASD
 - **Gather** the coins that light up around the square
-- **Buy:** walk to the stall carrying 5 gold and the sword is yours, equipped
-- **Watch the corners:** gold on the left, Attack on the right
+- **Talk:** walk up to the stall and the shopkeeper offers the sword. Pick "Buy"
+  and the gold leaves your purse, the blade lands in your satchel, and it equips.
+- **Watch the bar:** gold and satchel on the left, Attack on the right
 - **Save and Load:** buttons at the top right
 
 ## Make it yours
 
-- `content/quests.json` is the errand. Change the counts, retitle it. No
-  scripts.
+- `content/quests.json` is the errand and `content/dialogue.json` is what the
+  shopkeeper says. Change either. No scripts.
 - The sword is `game/rpg/items/sword.tres`: id, name, icon, and the slot it
   equips to. The vendor's stock and price sit on the `Vendor` node in the
-  Inspector.
+  Inspector, and the sword lands in the `Satchel` Inventory on purchase.
 - Your Attack stat is `game/rpg/attack_stat.tres`. The +5 gear bonus is one
   modifier line in `game/rpg/rpg_player.gd`.
 - `game/art/kenney/` is the pixel art, CC0 from Kenney's Tiny Town and Tiny
