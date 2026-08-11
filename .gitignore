@@ -16,3 +16,6 @@ tools/capture.gd
 tools/capture.gd.uid
 tools/capture.tscn
 store-listing.md
+
+# The editor rewrites project.godot on every open (engine floor, uid paths).
+# project.godot.master is the canonical one and is what the build ships.

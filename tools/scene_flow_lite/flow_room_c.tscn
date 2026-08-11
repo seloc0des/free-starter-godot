@@ -1,0 +1,18 @@
+[gd_scene load_steps=3 format=3 uid="uid://csfliteroomc"]
+
+[ext_resource type="Script" path="res://addons/scene_flow_lite/spawn_point_lite.gd" id="1"]
+
+[sub_resource type="RectangleShape2D" id="shape"]
+size = Vector2(24, 24)
+
+[node name="RoomC" type="Node2D"]
+
+[node name="StartSpawn" type="Marker2D" parent="."]
+position = Vector2(123, 45)
+script = ExtResource("1")
+id = &"start"
+
+[node name="PlayerStub" type="CharacterBody2D" parent="." groups=["player"]]
+
+[node name="Shape" type="CollisionShape2D" parent="PlayerStub"]
+shape = SubResource("shape")

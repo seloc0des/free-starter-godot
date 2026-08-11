@@ -1,0 +1,6 @@
+[gd_scene load_steps=2 format=3]
+
+[ext_resource type="Script" path="res://tools/save_load_lite/verify_chooser.gd" id="1"]
+
+[node name="VerifyChooser" type="Node"]
+script = ExtResource("1")

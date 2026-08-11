@@ -1,0 +1,41 @@
+[gd_scene load_steps=2 format=3 uid="uid://cenemyliteaccpt"]
+
+[ext_resource type="Script" path="res://tools/enemy_ai_lite/acceptance.gd" id="1"]
+
+[node name="Acceptance" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+script = ExtResource("1")
+
+[node name="BG" type="ColorRect" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+color = Color(0.101961, 0.117647, 0.176471, 1)
+
+[node name="VBox" type="VBoxContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = 24.0
+offset_top = 24.0
+offset_right = -24.0
+offset_bottom = -24.0
+theme_override_constants/separation = 12
+
+[node name="Banner" type="Label" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+text = "…"
+horizontal_alignment = 1
+theme_override_font_sizes/font_size = 96
+
+[node name="Detail" type="RichTextLabel" parent="VBox"]
+unique_name_in_owner = true
+layout_mode = 2
+size_flags_vertical = 3
+bbcode_enabled = true

@@ -75,14 +75,14 @@ func _ready() -> void:
 
 	root.add_child(HSeparator.new())
 	var note := Label.new()
-	note.text = "It's your game — re-pick and Apply to update in place, tweak the node in the Inspector, or open the \"Quests — Lite\" tab to author the quest's objectives."
+	note.text = "It's your game. Re-pick and Apply to update in place, tweak the node in the Inspector, or open the \"Quests (Lite)\" tab to author the quest's objectives."
 	note.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	note.modulate = Color(0.72, 0.75, 0.82)
 	root.add_child(note)
 
 	root.add_child(HSeparator.new())
 	var pro := Label.new()
-	pro.text = "🔒 Lite bakes the quest onto the node; you register + start it from code (QuestsLite.register / start_quest). Pro unlocks no-code wiring: a QuestGiver + QuestLogUI + EventTrigger that hand out and track quests on interact — no scripting."
+	pro.text = "🔒 Lite bakes the quest onto the node. You register + start it from code (QuestsLite.register / start_quest). Pro unlocks no-code wiring: a QuestGiver + QuestLogUI + EventTrigger that hand out and track quests on interact. No scripting."
 	pro.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	pro.modulate = Color(0.85, 0.8, 0.55)
 	root.add_child(pro)
@@ -119,7 +119,7 @@ func _on_apply() -> void:
 	var quest: Resource = _selected_quest()
 	var board := wire_board(root, target, quest, _chosen == "quest_giver")
 	_select(board)
-	var quest_msg := " with %s" % quest.resource_path.get_file() if quest != null else " (no quest yet — author one in the Quests tab)"
+	var quest_msg := " with %s" % quest.resource_path.get_file() if quest != null else " (no quest yet: author one in the Quests tab)"
 	_say("%s on \"%s\"%s. From code: QuestsLite.register(board.get_meta(\"quest\")), then start_quest(). Or tweak it in the Inspector." % [_pretty(_chosen), target.name, quest_msg], OK_COLOR)
 
 
@@ -184,7 +184,7 @@ func _on_new_quest() -> void:
 	_scan_fs()
 	_refresh_quests()
 	_select_quest_path(path)
-	_say("Made a starter quest: %s. Pick it above, then Apply — or open the Quests tab to add objectives." % path.get_file(), OK_COLOR)
+	_say("Made a starter quest: %s. Pick it above, then Apply, or open the Quests tab to add objectives." % path.get_file(), OK_COLOR)
 
 
 # Pure so the test can drive it. A minimal 1-objective quest the buyer can

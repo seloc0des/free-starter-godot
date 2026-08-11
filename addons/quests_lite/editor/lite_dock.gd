@@ -12,7 +12,7 @@ extends Control
 # ===================== CONFIG (per-pack) =====================
 const RESOURCE_SCRIPT := preload("res://addons/quests_lite/quest_lite.gd")
 const DEFAULT_DIR := "res://quests"
-const DOCK_NAME := "Quests — Lite"
+const DOCK_NAME := "Quests (Lite)"
 const NEW_BASENAME := "new_quest"
 const UPGRADE_LABEL := "Pro adds 8 objective types, quest chains, QuestGiver + QuestSetLoader wiring + the EventTrigger node."
 const UPGRADE_URL := "https://selodev.itch.io/quests-no-code-quest-system-for-godot-4"
@@ -245,7 +245,7 @@ func _texture(prop: String, value: Variant) -> Control:
 
 func _deferred(kind: String) -> Label:
 	var l := Label.new()
-	l.text = "(%s — edit in Inspector; Pro authors this in-panel)" % kind
+	l.text = "(%s: edit in Inspector. Pro authors this in-panel)" % kind
 	l.modulate = HINT_COLOR
 	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	return l
