@@ -23,9 +23,13 @@ the pickups announce, which is the
 
 ## 3. Reskin it
 
-The player, the Healer and the herbs are plain `ColorRect` rectangles in
-`game/world.tscn`. Replace each "Body" ColorRect with a `Sprite2D` and your own
-PNG, in the same position. Change the `Ground` colour for a different setting.
+Every texture lives in `game/art/` as a plain PNG (CC0 pixel art from 0x72's
+DungeonTileset II, see `CREDITS.md`). Overwrite a PNG with your own image of the
+same name and the game picks it up on the next run, no scene edits needed. The
+player and Healer animations are `player_frames.tres` and `healer_frames.tres`,
+the floor and walls come from `dungeon_tiles.tres`, and the room size is the
+`room` export on the `Ground` node. Wall collision and the camera bounds follow
+that export automatically.
 
 ## 4. Switch on the system your idea needs
 

@@ -13,7 +13,7 @@ func _ready() -> void:
 	$Bar/Load.focus_mode = Control.FOCUS_NONE
 	$Bar/Save.pressed.connect(func() -> void: SaveLite.save())
 	$Bar/Load.pressed.connect(func() -> void: SaveLite.load())
-	_status.text = "Find the Healer (green) — walk up and press Space."
-	QuestsLite.quest_started.connect(func(_id: String): _status.text = "Gather 3 herbs — they just lit up.")
+	_status.text = "Find the Healer — walk up and press Space."
+	QuestsLite.quest_started.connect(func(_id: String): _status.text = "Gather 3 green flasks — they just lit up.")
 	QuestsLite.objective_progressed.connect(func(_q: String, _o: String, c: int, r: int): _status.text = "Herbs: %d / %d" % [c, r])
 	QuestsLite.quest_completed.connect(func(_id: String): _status.text = "Quest complete! Nice — you made a game loop.")
