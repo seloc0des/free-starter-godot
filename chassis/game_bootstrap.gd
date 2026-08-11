@@ -59,6 +59,9 @@ func _register_quests() -> void:
 
 		QuestsLite.register(quest)
 		quest_ids.append(quest.id)
+		# genres without dialogue (dungeon) start their quest straight from content
+		if qd.get("autostart", false):
+			QuestsLite.start_quest(quest.id)
 
 
 func _register_dialogues() -> void:
