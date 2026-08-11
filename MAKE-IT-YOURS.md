@@ -50,7 +50,9 @@ Some starting points:
 
 Each Lite system is the free cut of a paid one. The full versions share the same
 event bus and drop into the same folder, so adding one doesn't mean rebuilding
-what you have. The catalogue is at https://selodev.itch.io.
+what you have. All of them ship together as **SELODEV Complete** on
+https://selodev.itch.io: one purchase, every system plus the Game Kit that wires
+them, and your game goes to the next level in place.
 
 ## 6. Publish it
 

@@ -1,0 +1,5 @@
+{
+  "title": "SELODEV Dungeon Starter",
+  "genre": "dungeon",
+  "systems": ["save", "quests", "combat", "enemy_ai", "controller"]
+}

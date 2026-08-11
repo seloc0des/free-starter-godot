@@ -1,0 +1,12 @@
+[
+  {
+    "id": "clear_crypt",
+    "title": "Clear the Crypt",
+    "description": "Slay the crypt's monsters. Attack with Space.",
+    "autostart": true,
+    "objectives": [
+      { "id": "goblins", "type": "kill", "target": "goblin", "required": 3 },
+      { "id": "skeletons", "type": "kill", "target": "skeleton", "required": 2 }
+    ]
+  }
+]

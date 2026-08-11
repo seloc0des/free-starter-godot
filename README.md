@@ -83,7 +83,9 @@ the Start Here panel itself.
 
 Each Lite system is the free cut of a paid one. When you hit a wall, the full
 version drops into the same place and speaks the same event bus, so nothing has
-to be rebuilt. The full catalogue is at https://selodev.itch.io.
+to be rebuilt. The full versions of everything in this project, plus the Game
+Kit that wires them together, ship in one package: **SELODEV Complete** on
+https://selodev.itch.io. One purchase, every system, drop-in upgrades.
 
 ## Make it yours
 
