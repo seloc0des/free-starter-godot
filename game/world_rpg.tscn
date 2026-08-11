@@ -1,0 +1,227 @@
+[gd_scene load_steps=24 format=3 uid="uid://cfsworldrpg01"]
+
+[ext_resource type="Script" path="res://game/rpg/rpg_player.gd" id="1"]
+[ext_resource type="Script" path="res://game/rpg/coin_pickup.gd" id="2"]
+[ext_resource type="Script" path="res://game/rpg/vendor_stall.gd" id="3"]
+[ext_resource type="Script" path="res://game/rpg/rpg_hud.gd" id="4"]
+[ext_resource type="Script" path="res://game/rpg/rpg_grounds.gd" id="5"]
+[ext_resource type="TileSet" path="res://game/art/kenney/kenney_tiles.tres" id="6"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/rpg_hero.png" id="7"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/coin.png" id="8"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/vendor_npc.png" id="9"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/sword.png" id="10"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/fence_post.png" id="11"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/town_sheet.png" id="12"]
+[ext_resource type="Script" path="res://addons/controller_lite/top_down_mover_lite.gd" id="13"]
+[ext_resource type="Script" path="res://addons/equipment_lite/equipment_lite.gd" id="14"]
+[ext_resource type="Script" path="res://addons/stats_skills_lite/stats_component_lite.gd" id="15"]
+[ext_resource type="Script" path="res://addons/vendor_lite/vendor_lite.gd" id="16"]
+[ext_resource type="Script" path="res://addons/vendor_lite/wallet_lite.gd" id="17"]
+[ext_resource type="Resource" path="res://game/rpg/items/sword.tres" id="18"]
+[ext_resource type="Resource" path="res://game/rpg/attack_stat.tres" id="19"]
+[ext_resource type="Script" path="res://addons/inventory_lite/inventory_lite.gd" id="20"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(12, 12)
+
+[sub_resource type="RectangleShape2D" id="2"]
+size = Vector2(14, 14)
+
+[sub_resource type="CircleShape2D" id="3"]
+radius = 26.0
+
+[node name="World" type="Node2D"]
+
+[node name="Ground" type="TileMapLayer" parent="."]
+tile_set = ExtResource("6")
+script = ExtResource("5")
+camera_path = NodePath("../Player/Camera2D")
+
+[node name="Wallet" type="Node" parent="." groups=["wallet"]]
+script = ExtResource("17")
+
+[node name="Satchel" type="Node" parent="."]
+script = ExtResource("20")
+
+[node name="Vendor" type="Node" parent="."]
+script = ExtResource("16")
+stock = [{
+"item": ExtResource("18"),
+"price": 5,
+"stock": 1
+}]
+wallet_path = NodePath("../Wallet")
+inventory_path = NodePath("../Satchel")
+
+[node name="Deco" type="Node2D" parent="."]
+
+[node name="HouseBlue" type="Sprite2D" parent="Deco"]
+position = Vector2(590, 296)
+texture = ExtResource("12")
+region_enabled = true
+region_rect = Rect2(0, 64, 48, 48)
+
+[node name="HouseRed" type="Sprite2D" parent="Deco"]
+position = Vector2(845, 296)
+texture = ExtResource("12")
+region_enabled = true
+region_rect = Rect2(96, 64, 48, 48)
+
+[node name="Post1" type="Sprite2D" parent="Deco"]
+position = Vector2(672, 296)
+texture = ExtResource("11")
+
+[node name="Post2" type="Sprite2D" parent="Deco"]
+position = Vector2(768, 296)
+texture = ExtResource("11")
+
+[node name="Coin1" type="Area2D" parent="."]
+position = Vector2(620, 340)
+script = ExtResource("2")
+pickup_id = "coin_1"
+wallet_path = NodePath("../Wallet")
+
+[node name="Icon" type="Sprite2D" parent="Coin1"]
+texture = ExtResource("8")
+
+[node name="Col" type="CollisionShape2D" parent="Coin1"]
+shape = SubResource("2")
+
+[node name="Coin2" type="Area2D" parent="."]
+position = Vector2(830, 330)
+script = ExtResource("2")
+pickup_id = "coin_2"
+wallet_path = NodePath("../Wallet")
+
+[node name="Icon" type="Sprite2D" parent="Coin2"]
+texture = ExtResource("8")
+
+[node name="Col" type="CollisionShape2D" parent="Coin2"]
+shape = SubResource("2")
+
+[node name="Coin3" type="Area2D" parent="."]
+position = Vector2(700, 420)
+script = ExtResource("2")
+pickup_id = "coin_3"
+wallet_path = NodePath("../Wallet")
+
+[node name="Icon" type="Sprite2D" parent="Coin3"]
+texture = ExtResource("8")
+
+[node name="Col" type="CollisionShape2D" parent="Coin3"]
+shape = SubResource("2")
+
+[node name="Coin4" type="Area2D" parent="."]
+position = Vector2(560, 470)
+script = ExtResource("2")
+pickup_id = "coin_4"
+wallet_path = NodePath("../Wallet")
+
+[node name="Icon" type="Sprite2D" parent="Coin4"]
+texture = ExtResource("8")
+
+[node name="Col" type="CollisionShape2D" parent="Coin4"]
+shape = SubResource("2")
+
+[node name="Coin5" type="Area2D" parent="."]
+position = Vector2(900, 470)
+script = ExtResource("2")
+pickup_id = "coin_5"
+wallet_path = NodePath("../Wallet")
+
+[node name="Icon" type="Sprite2D" parent="Coin5"]
+texture = ExtResource("8")
+
+[node name="Col" type="CollisionShape2D" parent="Coin5"]
+shape = SubResource("2")
+
+[node name="Stall" type="Area2D" parent="."]
+position = Vector2(720, 312)
+script = ExtResource("3")
+vendor_path = NodePath("../Vendor")
+sword_item = ExtResource("18")
+
+[node name="Keeper" type="Sprite2D" parent="Stall"]
+position = Vector2(0, -14)
+texture = ExtResource("9")
+
+[node name="Ware" type="Sprite2D" parent="Stall"]
+position = Vector2(18, -10)
+texture = ExtResource("10")
+
+[node name="Prompt" type="Label" parent="Stall"]
+offset_left = -40.0
+offset_top = -44.0
+offset_right = 40.0
+offset_bottom = -32.0
+theme_override_font_sizes/font_size = 8
+text = "Need 5 gold"
+horizontal_alignment = 1
+
+[node name="Col" type="CollisionShape2D" parent="Stall"]
+shape = SubResource("3")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(380, 380)
+script = ExtResource("1")
+
+[node name="Sprite" type="Sprite2D" parent="Player"]
+offset = Vector2(0, -2)
+texture = ExtResource("7")
+
+[node name="Sword" type="Sprite2D" parent="Player"]
+position = Vector2(10, -2)
+texture = ExtResource("10")
+
+[node name="Col" type="CollisionShape2D" parent="Player"]
+shape = SubResource("1")
+
+[node name="Mover" type="Node" parent="Player"]
+script = ExtResource("13")
+speed = 140.0
+save_id = "rpg_player"
+
+[node name="Equipment" type="Node" parent="Player"]
+script = ExtResource("14")
+
+[node name="Stats" type="Node" parent="Player"]
+script = ExtResource("15")
+definitions = [ExtResource("19")]
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+zoom = Vector2(3, 3)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("4")
+
+[node name="Bar" type="HBoxContainer" parent="HUD"]
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 44.0
+theme_override_constants/separation = 12
+
+[node name="Gold" type="Label" parent="HUD/Bar"]
+layout_mode = 2
+vertical_alignment = 1
+text = "Gold: 0"
+
+[node name="Status" type="Label" parent="HUD/Bar"]
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+text = "Gear up."
+
+[node name="Attack" type="Label" parent="HUD/Bar"]
+layout_mode = 2
+vertical_alignment = 1
+text = "Attack: 5"
+
+[node name="Save" type="Button" parent="HUD/Bar"]
+layout_mode = 2
+text = "Save"
+
+[node name="Load" type="Button" parent="HUD/Bar"]
+layout_mode = 2
+text = "Load"
