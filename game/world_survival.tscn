@@ -1,0 +1,196 @@
+[gd_scene load_steps=22 format=3 uid="uid://cfsworldsurv1"]
+
+[ext_resource type="Script" path="res://game/survival/survival_player.gd" id="1"]
+[ext_resource type="Script" path="res://game/survival/forage_pickup.gd" id="2"]
+[ext_resource type="Script" path="res://game/survival/camp_station.gd" id="3"]
+[ext_resource type="Script" path="res://game/survival/survival_hud.gd" id="4"]
+[ext_resource type="Script" path="res://game/survival/survival_grounds.gd" id="5"]
+[ext_resource type="TileSet" path="res://game/art/kenney/kenney_tiles.tres" id="6"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/hero.png" id="7"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/log.png" id="8"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/mushrooms.png" id="9"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/sign.png" id="10"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/chest.png" id="11"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/tree_orange.png" id="12"]
+[ext_resource type="Script" path="res://addons/controller_lite/top_down_mover_lite.gd" id="13"]
+[ext_resource type="Script" path="res://addons/inventory_lite/inventory_lite.gd" id="14"]
+[ext_resource type="Script" path="res://addons/crafting_lite/crafting_lite.gd" id="15"]
+[ext_resource type="Resource" path="res://game/survival/items/wood.tres" id="16"]
+[ext_resource type="Resource" path="res://game/survival/items/mushroom.tres" id="17"]
+[ext_resource type="Resource" path="res://game/survival/items/camp_chest.tres" id="18"]
+
+[sub_resource type="RectangleShape2D" id="1"]
+size = Vector2(12, 12)
+
+[sub_resource type="RectangleShape2D" id="2"]
+size = Vector2(14, 14)
+
+[sub_resource type="CircleShape2D" id="3"]
+radius = 26.0
+
+[node name="World" type="Node2D"]
+
+[node name="Ground" type="TileMapLayer" parent="."]
+tile_set = ExtResource("6")
+script = ExtResource("5")
+camera_path = NodePath("../Player/Camera2D")
+
+[node name="CampBag" type="Node" parent="."]
+script = ExtResource("14")
+
+[node name="Crafting" type="Node" parent="."]
+script = ExtResource("15")
+inventory_path = NodePath("../CampBag")
+
+[node name="Deco" type="Node2D" parent="."]
+
+[node name="Orange1" type="Sprite2D" parent="Deco"]
+position = Vector2(532, 308)
+texture = ExtResource("12")
+
+[node name="Orange2" type="Sprite2D" parent="Deco"]
+position = Vector2(1090, 300)
+texture = ExtResource("12")
+
+[node name="Orange3" type="Sprite2D" parent="Deco"]
+position = Vector2(350, 520)
+texture = ExtResource("12")
+
+[node name="Orange4" type="Sprite2D" parent="Deco"]
+position = Vector2(880, 540)
+texture = ExtResource("12")
+
+[node name="Wood1" type="Area2D" parent="."]
+position = Vector2(560, 300)
+script = ExtResource("2")
+item = ExtResource("16")
+pickup_id = "wood_1"
+bag_path = NodePath("../CampBag")
+
+[node name="Icon" type="Sprite2D" parent="Wood1"]
+texture = ExtResource("8")
+
+[node name="Col" type="CollisionShape2D" parent="Wood1"]
+shape = SubResource("2")
+
+[node name="Wood2" type="Area2D" parent="."]
+position = Vector2(760, 470)
+script = ExtResource("2")
+item = ExtResource("16")
+pickup_id = "wood_2"
+bag_path = NodePath("../CampBag")
+
+[node name="Icon" type="Sprite2D" parent="Wood2"]
+texture = ExtResource("8")
+
+[node name="Col" type="CollisionShape2D" parent="Wood2"]
+shape = SubResource("2")
+
+[node name="Wood3" type="Area2D" parent="."]
+position = Vector2(940, 260)
+script = ExtResource("2")
+item = ExtResource("16")
+pickup_id = "wood_3"
+bag_path = NodePath("../CampBag")
+
+[node name="Icon" type="Sprite2D" parent="Wood3"]
+texture = ExtResource("8")
+
+[node name="Col" type="CollisionShape2D" parent="Wood3"]
+shape = SubResource("2")
+
+[node name="Mushroom1" type="Area2D" parent="."]
+position = Vector2(510, 450)
+script = ExtResource("2")
+item = ExtResource("17")
+pickup_id = "mushroom_1"
+bag_path = NodePath("../CampBag")
+
+[node name="Icon" type="Sprite2D" parent="Mushroom1"]
+texture = ExtResource("9")
+
+[node name="Col" type="CollisionShape2D" parent="Mushroom1"]
+shape = SubResource("2")
+
+[node name="Mushroom2" type="Area2D" parent="."]
+position = Vector2(1020, 420)
+script = ExtResource("2")
+item = ExtResource("17")
+pickup_id = "mushroom_2"
+bag_path = NodePath("../CampBag")
+
+[node name="Icon" type="Sprite2D" parent="Mushroom2"]
+texture = ExtResource("9")
+
+[node name="Col" type="CollisionShape2D" parent="Mushroom2"]
+shape = SubResource("2")
+
+[node name="CampSpot" type="Area2D" parent="."]
+position = Vector2(700, 330)
+script = ExtResource("3")
+crafting_path = NodePath("../Crafting")
+wood_item = ExtResource("16")
+chest_item = ExtResource("18")
+
+[node name="Sign" type="Sprite2D" parent="CampSpot"]
+texture = ExtResource("10")
+
+[node name="Chest" type="Sprite2D" parent="CampSpot"]
+position = Vector2(20, 2)
+texture = ExtResource("11")
+
+[node name="Prompt" type="Label" parent="CampSpot"]
+offset_left = -44.0
+offset_top = -30.0
+offset_right = 44.0
+offset_bottom = -18.0
+theme_override_font_sizes/font_size = 8
+text = "Bring 3 firewood"
+horizontal_alignment = 1
+
+[node name="Col" type="CollisionShape2D" parent="CampSpot"]
+shape = SubResource("3")
+
+[node name="Player" type="CharacterBody2D" parent="."]
+position = Vector2(380, 380)
+script = ExtResource("1")
+
+[node name="Sprite" type="Sprite2D" parent="Player"]
+offset = Vector2(0, -2)
+texture = ExtResource("7")
+
+[node name="Col" type="CollisionShape2D" parent="Player"]
+shape = SubResource("1")
+
+[node name="Mover" type="Node" parent="Player"]
+script = ExtResource("13")
+speed = 140.0
+save_id = "survival_player"
+
+[node name="Camera2D" type="Camera2D" parent="Player"]
+zoom = Vector2(3, 3)
+
+[node name="HUD" type="CanvasLayer" parent="."]
+script = ExtResource("4")
+
+[node name="Bar" type="HBoxContainer" parent="HUD"]
+anchor_right = 1.0
+offset_left = 12.0
+offset_top = 12.0
+offset_right = -12.0
+offset_bottom = 44.0
+theme_override_constants/separation = 12
+
+[node name="Status" type="Label" parent="HUD/Bar"]
+layout_mode = 2
+size_flags_horizontal = 3
+vertical_alignment = 1
+text = "Make camp."
+
+[node name="Save" type="Button" parent="HUD/Bar"]
+layout_mode = 2
+text = "Save"
+
+[node name="Load" type="Button" parent="HUD/Bar"]
+layout_mode = 2
+text = "Load"
