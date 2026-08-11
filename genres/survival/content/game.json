@@ -1,0 +1,5 @@
+{
+  "title": "SELODEV Survival Starter",
+  "genre": "survival",
+  "systems": ["save", "quests", "inventory", "crafting", "controller"]
+}

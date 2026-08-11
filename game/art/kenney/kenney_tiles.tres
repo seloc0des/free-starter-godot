@@ -1,0 +1,29 @@
+[gd_resource type="TileSet" load_steps=9 format=3 uid="uid://cfskenneytile"]
+
+[ext_resource type="Texture2D" path="res://game/art/kenney/grass.png" id="1"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/grass_sprigs.png" id="2"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/grass_flowers.png" id="3"]
+[ext_resource type="Texture2D" path="res://game/art/kenney/tree_green.png" id="4"]
+
+[sub_resource type="TileSetAtlasSource" id="src_0"]
+texture = ExtResource("1")
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="src_1"]
+texture = ExtResource("2")
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="src_2"]
+texture = ExtResource("3")
+0:0/0 = 0
+
+[sub_resource type="TileSetAtlasSource" id="src_3"]
+texture = ExtResource("4")
+0:0/0 = 0
+
+[resource]
+tile_size = Vector2i(16, 16)
+sources/0 = SubResource("src_0")
+sources/1 = SubResource("src_1")
+sources/2 = SubResource("src_2")
+sources/3 = SubResource("src_3")
