@@ -70,6 +70,11 @@ static func run(host: Node) -> Dictionary:
 	body.global_position = Vector2(999, 999)
 	mover.load_state(snap)
 	ok = _chk(lines, body.global_position.is_equal_approx(Vector2(42, 24)), "save/load restores position") and ok
+	# float(null) throws instead of coercing, which used to abort load_state
+	# outright: the body then kept its spawn position and nothing said why.
+	body.global_position = Vector2(999, 999)
+	mover.load_state({"x": null, "y": null})
+	ok = _chk(lines, body.global_position.is_equal_approx(Vector2.ZERO), "a save with nulls in it still loads") and ok
 
 	for n in [body, sign_ia, interactor, near, far]:
 		n.queue_free()

@@ -11,7 +11,7 @@ drops is a Loot table, and the kill count is a Quest. That is seven Lite systems
 working together in one small game. All fourteen are in `addons/`, wired through
 one event bus.
 
-## Play it (Godot 4.3 or newer)
+## Play it (Godot 4.5 or newer)
 
 Open this folder in Godot and press **Play (F5)**.
 

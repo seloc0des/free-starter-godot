@@ -9,7 +9,7 @@ the Healer talks through Dialogue, the errand is a Quest, the herbs land in an
 Inventory bag (watch the count, top right), and Save keeps it all. Fourteen
 systems are in `addons/`, waiting for when your game needs the rest.
 
-## Play it (Godot 4.3 or newer)
+## Play it (Godot 4.5 or newer)
 
 Open this folder in Godot and press **Play (F5)**.
 

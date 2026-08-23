@@ -21,6 +21,20 @@ gather something other than herbs, change the objective's `target` and change wh
 the pickups announce, which is the
 `GameEvents.item_collected.emit("<your_item>", 1)` line in `game/herb.gd`.
 
+### If you get the JSON wrong
+
+You will at some point, and it's fine. A missing comma or a stray quote won't
+take the game down. Godot's **Output** panel names the file, the entry number and
+what it expected, then boots the rest of the file without that one entry:
+
+```
+[chassis] res://content/quests.json entry 2 has no "id" — skipped
+```
+
+So if a quest goes missing after an edit, read the Output panel first. That said,
+the game can only skip what it can parse: if the file itself is broken JSON, you
+get one line with the file and the line number to go fix.
+
 ## 3. Reskin it
 
 Every texture lives in `game/art/` as a plain PNG (CC0 pixel art from 0x72's

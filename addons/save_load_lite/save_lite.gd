@@ -66,7 +66,14 @@ func load(path: String = DEFAULT_PATH) -> bool:
 	if not (parsed is Dictionary):
 		load_failed.emit("malformed_json: %s" % path)
 		return false
-	var nodes_data: Dictionary = parsed.get("nodes", {})
+	# Guard the shape rather than casting: a hand-edited or truncated save whose
+	# "nodes" isn't an object used to abort this function outright, so neither
+	# load_completed nor load_failed ever fired and the caller heard nothing.
+	var raw_nodes: Variant = parsed.get("nodes", {})
+	if not (raw_nodes is Dictionary):
+		load_failed.emit("malformed_json: %s" % path)
+		return false
+	var nodes_data: Dictionary = raw_nodes
 	for node in get_tree().get_nodes_in_group(CONTRACT_GROUP):
 		if not node.has_method("load_state") or not node.has_method("get_save_id"):
 			continue
