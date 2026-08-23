@@ -25,30 +25,22 @@ func _ready() -> void:
 	ok = _exp(game_cfg.get("genre", "") == "dungeon", "game.json declares the dungeon genre") and ok
 	var quests: Array = _load_json_array(content_dir + "quests.json")
 	ok = _exp(quests.size() == 1, "one quest defined") and ok
-	var qd: Dictionary = quests[0]
-	ok = _exp(bool(qd.get("autostart", false)), "quest autostarts (no dialogue in this genre)") and ok
-	var objs: Array = qd.get("objectives", [])
+	# Guarded rather than cast: this self-test is the first thing a buyer runs
+	# after editing content, so a typo in quests.json has to read as a failed
+	# check with a name on it, not a red script error out of the test harness.
+	var qd: Dictionary = quests[0] if quests.size() > 0 and quests[0] is Dictionary else {}
+	ok = _exp(not qd.is_empty(), "quests.json entry 0 is an object") and ok
+	ok = _exp(qd.get("autostart", false) == true, "quest autostarts (no dialogue in this genre)") and ok
+	var objs: Array = qd.get("objectives", []) if qd.get("objectives", []) is Array else []
 	ok = _exp(objs.size() == 2, "two kill objectives") and ok
 
-	# register it the way the chassis does, autostart included
-	var quest := QuestLite.new()
-	quest.id = String(qd.get("id", ""))
-	quest.title = String(qd.get("title", ""))
-	var built: Array[QuestObjectiveLite] = []
-	for o in objs:
-		var od: Dictionary = o
-		var obj := QuestObjectiveLite.new()
-		obj.id = String(od.get("id", ""))
-		obj.type = QuestObjectiveLite.Type.KILL
-		obj.target_id = String(od.get("target", ""))
-		obj.required = int(od.get("required", 1))
-		built.append(obj)
-	quest.objectives = built
-	QuestsLite.register(quest)
+	# Register through the real chassis instead of a copy of it, so this checks
+	# the code the game actually boots with. The copy could drift and pass.
+	var quest_id := String(qd.get("id", ""))
 	QuestsLite.quest_completed.connect(func(id: String) -> void:
-		if id == quest.id: _completed = true)
-	QuestsLite.start_quest(quest.id)
-	ok = _exp(QuestsLite.is_active(quest.id), "quest active after autostart path") and ok
+		if id == quest_id: _completed = true)
+	GameBootstrap._register_quests(content_dir + "quests.json")
+	ok = _exp(QuestsLite.is_active(quest_id), "quest active after autostart path") and ok
 
 	# --- B) roster ---
 	var world := WORLD.instantiate()
@@ -93,6 +85,28 @@ func _ready() -> void:
 	ok = _exp(is_equal_approx(dealt, player.get_node("Stats").get_stat("attack")),
 		"the hit dealt the Stats attack amount, once (%d)" % int(player.get_node("Stats").get_stat("attack"))) and ok
 
+	# --- F2) two swings closer together than the swing window ---
+	# attack_cooldown is an @export the buyer is invited to tune. Drop it under
+	# the ~0.1s poll window and the older swing used to switch the hitbox off
+	# underneath the newer one, which then asked a disabled Area2D for overlaps
+	# once per frame (a red engine error each time) and landed nothing.
+	var hitbox: Area2D = player.get_node("Attack")
+	var old_cd: float = player.attack_cooldown
+	player.attack_cooldown = 0.05
+	player._cooldown = 0.0
+	player.attack()
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	player._cooldown = 0.0
+	player.attack()                       # overlaps the first swing
+	for _f in 4:
+		await get_tree().physics_frame    # frame 6: the first swing would have cut out here
+	ok = _exp(hitbox.monitoring, "an overlapping swing keeps the hitbox its caller owns") and ok
+	for _f in 3:
+		await get_tree().physics_frame
+	ok = _exp(not hitbox.monitoring, "and the last swing still closes it when it ends") and ok
+	player.attack_cooldown = old_cd
+
 	# --- G) loot: table shape, drop spawn, flask heals ---
 	var table: LootTableLite = preload("res://game/dungeon/crypt_loot.tres")
 	ok = _exp(table.entries.size() == 3, "crypt table has 3 entries (small, big, nothing)") and ok
@@ -126,6 +140,39 @@ func _ready() -> void:
 		if c is CryptDrop:
 			c._on_body_entered(player)
 	ok = _exp(player.get_node("Health").current == before + 25.0, "the small flask healed 25") and ok
+
+	# ...and it really is where the goblin fell. Drops used to be positioned
+	# before they entered the tree, where global_position is only a local
+	# transform, so anything spawned under a world root that isn't at the origin
+	# landed offset by exactly that much.
+	var mark := world.get_child_count()
+	world.position = Vector2(500, 500)
+	await get_tree().physics_frame
+	var corpse: Vector2 = goblins[0].global_position
+	goblins[0]._spark()
+	goblins[0].loot_table = sure_drop
+	goblins[0]._drop_loot()
+	await get_tree().physics_frame
+	await get_tree().physics_frame
+	var placed := world.get_child_count() > mark
+	for i in range(mark, world.get_child_count()):
+		if not world.get_child(i).global_position.is_equal_approx(corpse):
+			placed = false
+	ok = _exp(placed, "a drop lands on the corpse even when the world root has moved") and ok
+	world.position = Vector2.ZERO
+	await get_tree().physics_frame
+
+	# A drop whose item has a junk "heal" must still despawn. float() throws on a
+	# null, and the throw used to skip the queue_free, so the drop sat there
+	# unpickable and threw again on every touch.
+	var junk_item := ItemLite.new()
+	junk_item.id = "junk_flask"
+	junk_item.metadata = {"heal": null}
+	var junk_drop := CryptDrop.new()
+	junk_drop.item = junk_item
+	world.add_child(junk_drop)
+	junk_drop._on_body_entered(player)
+	ok = _exp(junk_drop.is_queued_for_deletion(), "a drop with a junk heal value still despawns") and ok
 
 	# --- C) kill the rest through the hurtboxes ---
 	for e in goblins.slice(1) + skeletons:

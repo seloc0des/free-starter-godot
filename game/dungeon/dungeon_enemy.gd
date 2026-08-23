@@ -55,8 +55,12 @@ func _drop_loot() -> void:
 			continue
 		var drop := CryptDrop.new()
 		drop.item = dropped
-		drop.global_position = global_position
+		# Place it AFTER it lands in the tree. global_position on a node with no
+		# parent is just its local transform, so setting it first means the drop
+		# picks up the parent's offset on add_child and lands somewhere else.
+		# Deferred calls run in the order queued, so this follows the add_child.
 		get_parent().add_child.call_deferred(drop)
+		drop.set_deferred("global_position", global_position)
 
 
 func _flash() -> void:
@@ -68,5 +72,5 @@ func _flash() -> void:
 
 func _spark() -> void:
 	var spark := HitSpark.new()
-	spark.global_position = global_position
 	get_parent().add_child.call_deferred(spark)
+	spark.set_deferred("global_position", global_position)
