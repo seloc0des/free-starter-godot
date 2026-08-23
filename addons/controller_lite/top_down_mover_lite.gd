@@ -82,4 +82,10 @@ func save_state() -> Dictionary:
 func load_state(data: Dictionary) -> void:
 	if _body == null or data.is_empty():
 		return
-	_body.global_position = Vector2(float(data.get("x", 0.0)), float(data.get("y", 0.0)))
+	_body.global_position = Vector2(_num(data.get("x", 0.0)), _num(data.get("y", 0.0)))
+
+
+# float(null) throws rather than giving 0.0, so a hand-edited or truncated save
+# would abort load_state and quietly leave the body where it spawned.
+static func _num(v: Variant) -> float:
+	return float(v) if (v is float or v is int) else 0.0

@@ -11,7 +11,7 @@ Inventory system, the chest is a Crafting recipe, and the supply count is a
 Quest. That is seven Lite systems in one small game. All fourteen are in
 `addons/`, wired through one event bus.
 
-## Play it (Godot 4.3 or newer)
+## Play it (Godot 4.5 or newer)
 
 Open this folder in Godot and press **Play (F5)**.
 

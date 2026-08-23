@@ -58,7 +58,9 @@ func save_state() -> Dictionary:
 
 
 func load_state(data: Dictionary) -> void:
-	_collected = bool(data.get("collected", false))
+	# `== true` rather than bool(): bool(null) is a hard error, and a save with a
+	# null in it would abort here and leave the herb in whatever state it spawned.
+	_collected = data.get("collected", false) == true
 	if _collected:
 		_active = false
 		visible = false

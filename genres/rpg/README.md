@@ -12,7 +12,7 @@ raises your Attack through the Stats system's modifier math. The checklist is a
 Quest. That is eight Lite systems in one small game. All fourteen are in
 `addons/`, wired through one event bus.
 
-## Play it (Godot 4.3 or newer)
+## Play it (Godot 4.5 or newer)
 
 Open this folder in Godot and press **Play (F5)**.
 

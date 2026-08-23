@@ -28,7 +28,7 @@ config_version=5
 config/name="SELODEV Free Starter Kit"
 config/icon="res://icon.png"
 run/main_scene="res://game/world.tscn"
-config/features=PackedStringArray("4.3")
+config/features=PackedStringArray("4.5")
 
 [autoload]
 
@@ -54,4 +54,10 @@ enabled=PackedStringArray("res://addons/starter_kit/plugin.cfg", "res://addons/d
 
 [rendering]
 
+; Everything here is 2D pixel art: no shaders, no environment, no 3D. Forward+
+; is the engine default and it needs Vulkan, which rules out older and
+; virtualised machines and rules out web export entirely. Nothing in this
+; project needs it.
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
 textures/canvas_textures/default_texture_filter=0
