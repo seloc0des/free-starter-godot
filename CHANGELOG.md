@@ -1,9 +1,14 @@
 # Changelog
 
+The four starter kits (Free, Dungeon, Survival, RPG) are one project built four
+ways, so they share a version. Each entry below says which kits it reaches.
+
 ## 1.1.0
 
-Hardening pass on the parts a buyer actually touches: the `content/` JSON files
-and the save file.
+Hardening pass on the parts a buyer actually touches: the `content/` JSON files,
+the save file, and the exported knobs the docs invite you to tune.
+
+### Every kit
 
 - Content files survive a typo. A stray value, a `null` field, a missing `id` or
   a repeated one used to abort the whole registration pass, so a single mistake
@@ -15,15 +20,35 @@ and the save file.
   reported and ignored rather than taking the boot down with it.
 - An objective with `"required": 0` is floored to 1. A 0 meant the quest
   completed the moment you picked up anything at all, related or not.
-- A corrupt or hand-edited save now reports `load_failed`. It used to abort
-  mid-load and emit neither `load_failed` nor `load_completed`, so a game
-  showing "Load failed" on that signal showed nothing at all.
+- A corrupt or hand-edited save reports `load_failed`. It used to abort mid-load
+  and emit neither `load_failed` nor `load_completed`, so a game showing
+  "Load failed" on that signal showed nothing.
 - Pickups and the Controller mover survive a `null` in the save file instead of
   quietly failing to restore that one node.
-- The self-test covers all of the above, and the zip check now runs the story
-  slice as well as the fourteen system suites.
+- Renderer is `gl_compatibility`. These are 2D pixel-art projects with no
+  shaders, environment or 3D, so the default Forward+ only cost hardware support
+  and ruled out web export.
+- Engine floor is Godot 4.5.
+
+### Dungeon kit
+
+- Two sword swings closer together than the swing window no longer cancel each
+  other. `attack_cooldown` is an export you are meant to tune. Setting it below
+  the swing window meant the older swing switched the hitbox off underneath the
+  newer one, which then asked a disabled area for overlaps once per frame and
+  landed nothing.
+- Loot and hit sparks land on the corpse even when the world root has been
+  moved. They used to be positioned before entering the tree, where
+  `global_position` is only a local transform, so they picked up the parent's
+  offset.
+- A drop whose item has a junk `heal` value still despawns. The bad value threw
+  before the drop could free itself, leaving something on the floor that could
+  never be picked up.
+- The dungeon self-test registers its quest through the real chassis instead of
+  a copy of it, so it checks the code the game actually boots with.
 
 ## 1.0.0
 
 First release. Story slice (talk, quest, gather, save) on five Lite systems,
-with all fourteen vendored in `addons/`.
+with all fourteen vendored in `addons/`, plus the Dungeon, Survival and RPG
+genre kits.

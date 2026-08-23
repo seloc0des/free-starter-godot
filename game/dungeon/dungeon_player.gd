@@ -17,6 +17,7 @@ const PLAYER_TEAM := 0
 var _facing := Vector2.RIGHT
 var _cooldown := 0.0
 var _spawn := Vector2.ZERO
+var _swing := 0
 
 
 func _ready() -> void:
@@ -62,18 +63,25 @@ func attack() -> void:
 # is not, which is why the swing used to whiff. Polling a few frames also lets
 # a monster that steps into the arc mid-swing still take the hit.
 func _strike() -> void:
+	# Whoever swung last owns the hitbox. Drop attack_cooldown below the ~0.1s
+	# poll window and two swings overlap: the older one used to switch monitoring
+	# off underneath the newer one, which then spent the rest of its swing asking
+	# a disabled Area2D for overlaps (a red error per frame) and dealing nothing.
+	_swing += 1
+	var mine := _swing
 	_attack.monitoring = true
 	var struck := {}
 	for _i in 6:
 		await get_tree().physics_frame
-		if not is_instance_valid(_attack):
+		if not is_instance_valid(_attack) or mine != _swing:
 			return
 		var dmg := _stats.get_stat("attack")   # same Stats math the RPG kit uses
 		for area in _attack.get_overlapping_areas():
 			if area is HurtboxLite and area.team != PLAYER_TEAM and not struck.has(area):
 				struck[area] = true
 				area.receive_hit(dmg, _attack)
-	_attack.monitoring = false
+	if mine == _swing:
+		_attack.monitoring = false
 
 
 func _on_died() -> void:
