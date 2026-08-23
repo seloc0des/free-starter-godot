@@ -21,7 +21,18 @@ func _ready() -> void:
 	add_to_group("save_load_contract_lite")
 	_chest_sprite.visible = false
 	_prompt.visible = false
+	# Wire the touch signals before anything that can fail, so a misconfigured
+	# camp spot still reacts to the player instead of sitting there inert.
+	body_entered.connect(_on_body_entered)
+	body_exited.connect(func(_b: Node) -> void: _prompt.visible = false)
+
 	_crafting = get_node_or_null(crafting_path) as CraftingLite
+	# get_node_or_null and then straight into _crafting.add_recipe: move the
+	# Crafting node in the scene and that aborted the rest of _ready, so the camp
+	# spot silently did nothing for the whole game.
+	if _crafting == null:
+		push_error("[camp] crafting_path doesn't point at a CraftingLite node, so the camp spot can't craft")
+		return
 
 	_recipe = RecipeLite.new()
 	_recipe.id = "camp_chest"
@@ -31,12 +42,12 @@ func _ready() -> void:
 	_crafting.add_recipe(_recipe)
 	_crafting.crafted.connect(_on_crafted)
 
-	body_entered.connect(_on_body_entered)
-	body_exited.connect(func(_b: Node) -> void: _prompt.visible = false)
-
 
 func _on_body_entered(b: Node) -> void:
 	if _crafted or not b.is_in_group("player"):
+		return
+	if _crafting == null or _recipe == null:
+		_prompt.visible = true      # nothing to craft with, but say something
 		return
 	if _crafting.can_craft(_recipe):
 		_crafting.craft(_recipe)
@@ -63,5 +74,7 @@ func save_state() -> Dictionary:
 
 
 func load_state(data: Dictionary) -> void:
-	_crafted = bool(data.get("crafted", false))
+	# `== true` rather than bool(): bool(null) throws instead of giving false, and
+	# the throw aborts load_state, leaving this one node stuck as it spawned.
+	_crafted = data.get("crafted", false) == true
 	_chest_sprite.visible = _crafted

@@ -23,12 +23,17 @@ the save file, and the exported knobs the docs invite you to tune.
 - A corrupt or hand-edited save reports `load_failed`. It used to abort mid-load
   and emit neither `load_failed` nor `load_completed`, so a game showing
   "Load failed" on that signal showed nothing.
-- Pickups and the Controller mover survive a `null` in the save file instead of
-  quietly failing to restore that one node.
+- The Controller mover survives a `null` in the save file instead of quietly
+  failing to put the player back where they were.
 - Renderer is `gl_compatibility`. These are 2D pixel-art projects with no
   shaders, environment or 3D, so the default Forward+ only cost hardware support
   and ruled out web export.
 - Engine floor is Godot 4.5.
+
+### Free kit
+
+- The herb pickups survive a `null` in the save file instead of quietly failing
+  to restore that one node.
 
 ### Dungeon kit
 
@@ -46,6 +51,18 @@ the save file, and the exported knobs the docs invite you to tune.
   never be picked up.
 - The dungeon self-test registers its quest through the real chassis instead of
   a copy of it, so it checks the code the game actually boots with.
+
+### Survival kit
+
+- Re-equipping the rake no longer stacks the Foraging bonus. `add_modifier`
+  appends rather than replacing by source, so every equip piled on another +1
+  and nothing ever took it back off. Taking the rake out of the slot now returns
+  the bonus too.
+- The forage, rake and camp save contracts survive a `null` in the save file
+  instead of quietly failing to restore that node.
+- A camp spot whose `crafting_path` points at the wrong node says so and still
+  responds to the player. It used to call straight into the missing node, which
+  aborted the rest of its setup and left the camp spot inert for the whole game.
 
 ## 1.0.0
 

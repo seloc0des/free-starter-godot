@@ -42,7 +42,9 @@ func save_state() -> Dictionary:
 
 
 func load_state(data: Dictionary) -> void:
-	_taken = bool(data.get("taken", false))
+	# `== true` rather than bool(): bool(null) throws instead of giving false, and
+	# the throw aborts load_state, leaving this one node stuck as it spawned.
+	_taken = data.get("taken", false) == true
 	if _taken:
 		visible = false
 		set_deferred("monitoring", false)
