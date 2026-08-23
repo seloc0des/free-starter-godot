@@ -101,6 +101,43 @@ func _ready() -> void:
 	SaveLite.load()
 	ok = _exp(player.global_position.is_equal_approx(Vector2(333, 444)), "save/load restored player position") and ok
 
+	# --- F) the weapon-slot bonus is a bonus, not a counter ---
+	# add_modifier appends and never replaces by source, so every re-equip used to
+	# pile on another +5 Attack and nothing took it back off on unequip.
+	var equip: EquipmentLite = player.get_node("Equipment")
+	var sword: ItemLite = stall.sword_item
+	equip.try_equip(sword)
+	equip.try_equip(sword)
+	await get_tree().process_frame
+	ok = _exp(int(stats.get_stat("attack")) == 10, "re-equipping the sword doesn't stack the Attack bonus") and ok
+	equip.unequip("weapon_main")
+	await get_tree().process_frame
+	ok = _exp(int(stats.get_stat("attack")) == 5, "sheathing the sword gives the bonus back") and ok
+	equip.try_equip(sword)
+	await get_tree().process_frame
+
+	# --- G) a save file with nulls in it ---
+	var coin: Node = coins[0]
+	coin._collected = true
+	coin.load_state({"collected": null})
+	var survived: bool = not coin._collected
+	stall._sold = true
+	stall.load_state({"sold": null})
+	survived = survived and not stall._sold
+	ok = _exp(survived, "a null in the save doesn't abort an rpg load_state") and ok
+
+	# --- H) a stall whose vendor_path points nowhere ---
+	# It called straight into the missing node, which aborted the rest of _ready:
+	# no dialogue hook, no body_entered, a shopkeeper who never said a word.
+	var orphan := stall.duplicate()
+	orphan.vendor_path = NodePath("NoSuchNode")
+	world.add_child(orphan)
+	await get_tree().process_frame
+	orphan._on_dialogue_event("buy_sword")
+	ok = _exp(orphan._vendor == null and orphan._prompt.visible,
+		"a stall with a broken vendor_path says so instead of throwing") and ok
+	orphan.queue_free()
+
 	print("=== ", "PASS" if ok else "FAIL", " ===")
 	get_tree().quit(0 if ok else 1)
 
