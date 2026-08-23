@@ -23,17 +23,14 @@ the save file, and the exported knobs the docs invite you to tune.
 - A corrupt or hand-edited save reports `load_failed`. It used to abort mid-load
   and emit neither `load_failed` nor `load_completed`, so a game showing
   "Load failed" on that signal showed nothing.
-- The Controller mover survives a `null` in the save file instead of quietly
-  failing to put the player back where they were.
+- Save contracts survive a `null` in the save file. `bool(null)` and
+  `float(null)` throw rather than giving false or zero, and the throw aborted
+  `load_state` partway, leaving that one node stuck in whatever state it spawned
+  with while everything around it restored fine.
 - Renderer is `gl_compatibility`. These are 2D pixel-art projects with no
   shaders, environment or 3D, so the default Forward+ only cost hardware support
   and ruled out web export.
 - Engine floor is Godot 4.5.
-
-### Free kit
-
-- The herb pickups survive a `null` in the save file instead of quietly failing
-  to restore that one node.
 
 ### Dungeon kit
 
@@ -58,11 +55,21 @@ the save file, and the exported knobs the docs invite you to tune.
   appends rather than replacing by source, so every equip piled on another +1
   and nothing ever took it back off. Taking the rake out of the slot now returns
   the bonus too.
-- The forage, rake and camp save contracts survive a `null` in the save file
-  instead of quietly failing to restore that node.
 - A camp spot whose `crafting_path` points at the wrong node says so and still
   responds to the player. It used to call straight into the missing node, which
   aborted the rest of its setup and left the camp spot inert for the whole game.
+
+### RPG kit
+
+- Re-equipping the sword no longer stacks the Attack bonus. Every equip piled on
+  another +5, so equipping it three times read 20 Attack instead of 10, and the
+  inflated number went into the save. Sheathing it now returns the bonus too.
+- A market stall whose `vendor_path` points at the wrong node says so and still
+  responds. It called straight into the missing node, which aborted the rest of
+  its setup, so the stall connected nothing at all and the shopkeeper never said
+  a word.
+- Buying with a custom item type that carries no `id` no longer throws partway
+  through the sale, which used to take the gold and never hand over the goods.
 
 ## 1.0.0
 

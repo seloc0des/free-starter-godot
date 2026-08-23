@@ -9,12 +9,17 @@ extends CharacterBody2D
 @onready var _equipment: EquipmentLite = $Equipment
 @onready var _stats: StatsComponentLite = $Stats
 
+# One fixed source for the weapon-slot bonus. add_modifier appends and never
+# replaces, so anything per-item here stacks forever.
+const ATTACK_SOURCE := "weapon_main_attack"
+
 var _bob := 0.0
 
 
 func _ready() -> void:
 	_sword.visible = false
 	_equipment.item_equipped.connect(_on_equipped)
+	_equipment.item_unequipped.connect(_on_unequipped)
 	# freeze at the stall while the shopkeeper is talking
 	DialoguesLite.dialogue_started.connect(func(_id: String) -> void: ControllersLite.lock_movement(&"dialogue"))
 	DialoguesLite.dialogue_finished.connect(func(_id: String) -> void: ControllersLite.unlock_movement(&"dialogue"))
@@ -32,9 +37,19 @@ func _physics_process(delta: float) -> void:
 		_sprite.offset.y = -2.0
 
 
-func _on_equipped(slot_id: String, item: Resource) -> void:
+func _on_equipped(slot_id: String, _item: Resource) -> void:
 	if slot_id != "weapon_main":
 		return
 	_sword.visible = true
-	_stats.add_modifier({"stat": "attack", "op": "flat", "amount": 5.0, "source_id": String(item.get("id"))})
+	# Clear ours first: re-equipping used to pile on another +5 Attack every
+	# single time, and nothing ever took it back off when the sword came out.
+	_stats.remove_modifier(ATTACK_SOURCE)
+	_stats.add_modifier({"stat": "attack", "op": "flat", "amount": 5.0, "source_id": ATTACK_SOURCE})
 	GameEvents.item_collected.emit("geared", 1)
+
+
+func _on_unequipped(slot_id: String, _item: Resource) -> void:
+	if slot_id != "weapon_main":
+		return
+	_sword.visible = false
+	_stats.remove_modifier(ATTACK_SOURCE)
