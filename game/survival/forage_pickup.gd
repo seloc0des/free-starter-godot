@@ -73,7 +73,9 @@ func save_state() -> Dictionary:
 
 
 func load_state(data: Dictionary) -> void:
-	_collected = bool(data.get("collected", false))
+	# `== true` rather than bool(): bool(null) throws instead of giving false, and
+	# the throw aborts load_state, leaving this one node stuck as it spawned.
+	_collected = data.get("collected", false) == true
 	if _collected:
 		_active = false
 		visible = false

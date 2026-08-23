@@ -105,6 +105,46 @@ func _ready() -> void:
 	SaveLite.load()
 	ok = _exp(player.global_position.is_equal_approx(Vector2(333, 444)), "save/load restored player position") and ok
 
+	# --- F) the weapon-slot bonus is a bonus, not a counter ---
+	# add_modifier appends and never replaces by source, so every re-equip used to
+	# pile on another +1 Foraging and nothing took it back off on unequip.
+	var equip: EquipmentLite = player.get_node("Equipment")
+	equip.try_equip(rake_node.item)
+	equip.try_equip(rake_node.item)
+	await get_tree().process_frame
+	ok = _exp(int(stats.get_stat("foraging")) == 2, "re-equipping the rake doesn't stack the Foraging bonus") and ok
+	equip.unequip("weapon_main")
+	await get_tree().process_frame
+	ok = _exp(int(stats.get_stat("foraging")) == 1, "taking the rake off gives the bonus back") and ok
+
+	# --- G) a save file with nulls in it ---
+	# bool(null) throws rather than giving false, and the throw aborts load_state
+	# partway, leaving that one node stuck in whatever state it spawned with.
+	var forage: Node = woods[0]
+	forage._collected = true
+	forage.visible = false
+	forage.load_state({"collected": null})
+	var survived: bool = not forage._collected
+	rake_node._taken = true
+	rake_node.load_state({"taken": null})
+	survived = survived and not rake_node._taken
+	station.load_state({"crafted": null})
+	survived = survived and not station._crafted
+	ok = _exp(survived, "a null in the save doesn't abort a survival load_state") and ok
+
+	# --- H) camp spot with its crafting_path pointing nowhere ---
+	# It looked up the node with get_node_or_null and then called straight into
+	# it, so moving the Crafting node in the scene aborted _ready: body_entered
+	# never got connected and the camp spot quietly did nothing all game.
+	var orphan := station.duplicate()
+	orphan.crafting_path = NodePath("NoSuchNode")
+	world.add_child(orphan)
+	await get_tree().process_frame
+	orphan._on_body_entered(player)
+	ok = _exp(orphan._crafting == null and orphan._prompt.visible,
+		"a camp spot with a broken crafting_path still reacts instead of dying quietly") and ok
+	orphan.queue_free()
+
 	print("=== ", "PASS" if ok else "FAIL", " ===")
 	get_tree().quit(0 if ok else 1)
 
