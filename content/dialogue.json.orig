@@ -7,7 +7,7 @@
       {
         "id": "n1",
         "speaker": "Healer",
-        "text": "Oh, thank goodness — will you help me?",
+        "text": "Oh, thank goodness. Will you help me?",
         "choices": [
           { "text": "Of course.", "next": "n2" },
           { "text": "Maybe later.", "next": "bye" }
