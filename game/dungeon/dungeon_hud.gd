@@ -28,12 +28,12 @@ func _ready() -> void:
 		h.stretch_mode = TextureRect.STRETCH_KEEP
 		_hearts.add_child(h)
 
-	_status.text = "Clear the crypt — attack with Space."
+	_status.text = "Clear the crypt. Attack with Space."
 	_seed_totals()
 	QuestsLite.quest_started.connect(func(_id: String) -> void: _seed_totals())
 	QuestsLite.objective_progressed.connect(_on_progress)
 	QuestsLite.quest_completed.connect(func(_id: String) -> void:
-		_status.text = "The crypt is clear! Nice — save your run.")
+		_status.text = "The crypt is clear. Save your run.")
 
 	# player spawns in the same scene, so it exists by the time we're ready
 	var players := get_tree().get_nodes_in_group("player")
