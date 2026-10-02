@@ -9,6 +9,10 @@ const FOLDER := "res://dialogues/"
 
 var _dialogue: DialogueLite = null
 var _node: DialogueNodeLite = null
+# What the node form last showed: the node's values then, and the form's own reading of
+# them. Apply writes only the fields that differ from that.
+var _node_seen := {}
+var _form_shown := {}
 
 var _folder_edit: LineEdit
 var _file_list: ItemList
@@ -25,18 +29,38 @@ var _choice_list: ItemList
 var _choice_text: LineEdit
 var _choice_next: LineEdit
 var _status: Label
+var _scroll: ScrollContainer
 
 
 func _ready() -> void:
 	name = "Dialogue"
 	_build_ui()
 	_reload_folder()
+	if Engine.is_editor_hint():
+		EditorInterface.get_inspector().property_edited.connect(_on_inspector_edit)
+		# an edit inside a node never reaches property_edited, but it does go through undo/redo
+		var ur := EditorInterface.get_editor_undo_redo()
+		ur.history_changed.connect(_on_editor_history)
+		ur.version_changed.connect(_on_editor_history)
+
+
+# A plain Control doesn't tell the dock slot how narrow its page can go, so say it
+# here. Height is the scroll's job.
+func _get_minimum_size() -> Vector2:
+	return Vector2(_scroll.get_combined_minimum_size().x, 0.0) if _scroll != null else Vector2.ZERO
 
 
 func _build_ui() -> void:
+	# taller than any dock slot, so it scrolls; never sideways, so long text wraps
+	_scroll = ScrollContainer.new()
+	_scroll.set_anchors_preset(Control.PRESET_FULL_RECT)
+	_scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
+	_scroll.minimum_size_changed.connect(update_minimum_size)
+	add_child(_scroll)
 	var root := VBoxContainer.new()
-	root.set_anchors_preset(Control.PRESET_FULL_RECT)
-	add_child(root)
+	root.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	root.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_scroll.add_child(root)
 
 	_folder_edit = LineEdit.new()
 	_folder_edit.text = FOLDER
@@ -142,6 +166,7 @@ func _labeled(text: String, field: Control) -> Control:
 func _header(text: String) -> Label:
 	var l := Label.new()
 	l.text = text
+	l.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
 	l.add_theme_color_override("font_color", Color(0.7, 0.75, 0.85))
 	return l
 
@@ -200,6 +225,8 @@ func _load_dialogue_into_form() -> void:
 	_node_event.text = ""
 	_node_next.text = ""
 	_choice_list.clear()
+	_node_seen.clear()
+	_form_shown.clear()
 
 
 func _refresh_node_list() -> void:
@@ -215,8 +242,10 @@ func _on_add_node() -> void:
 	if _dialogue == null:
 		_on_new()
 	var n := DialogueNodeLite.new()
-	n.id = "node_%d" % (_dialogue.nodes.size() + 1)
-	var arr: Array[DialogueNodeLite] = _dialogue.nodes
+	n.id = _free_node_id()
+	# copy, change, assign back: on a .tres the editor loaded, an empty array is
+	# the script's read-only default, and appending to it in place fails
+	var arr: Array[DialogueNodeLite] = _dialogue.nodes.duplicate()
 	arr.append(n)
 	_dialogue.nodes = arr
 	if _dialogue.entry == "":
@@ -227,10 +256,24 @@ func _on_add_node() -> void:
 	_load_node_into_form()
 
 
+# First unused "node_N". Numbering off the node count hands out a duplicate as
+# soon as anything was deleted ([node_1, node_2] minus node_1 gives a second
+# node_2), and then only the last of the two ever plays.
+func _free_node_id() -> String:
+	var used := {}
+	for n in _dialogue.nodes:
+		if n != null:
+			used[String(n.id)] = true
+	var i := 1
+	while used.has("node_%d" % i):
+		i += 1
+	return "node_%d" % i
+
+
 func _on_remove_node() -> void:
 	if _node == null or _dialogue == null:
 		return
-	var arr: Array[DialogueNodeLite] = _dialogue.nodes
+	var arr: Array[DialogueNodeLite] = _dialogue.nodes.duplicate()
 	arr.erase(_node)
 	_dialogue.nodes = arr
 	_node = null
@@ -256,18 +299,58 @@ func _load_node_into_form() -> void:
 	_node_event.text = _node.event
 	_node_next.text = _node.next
 	_refresh_choice_list()
+	_node_seen = _node_fields()
+	_form_shown = _form_fields()
+
+
+# The node's fields keyed like the form (the keys are the node's property names).
+func _node_fields() -> Dictionary:
+	return {"id": _node.id, "speaker": _node.speaker, "text": _node.text, "event": _node.event, "next": _node.next}
+
+
+func _form_fields() -> Dictionary:
+	return {"id": _node_id.text, "speaker": _node_speaker.text, "text": _node_text.text, "event": _node_event.text, "next": _node_next.text}
+
+
+func _show_field(f: String, v: Variant) -> void:
+	match f:
+		"id": _node_id.text = v
+		"speaker": _node_speaker.text = v
+		"text": _node_text.text = v
+		"event": _node_event.text = v
+		"next": _node_next.text = v
+
+
+# Show whatever changed on the node since the form last showed it, one field at a time,
+# so anything typed here and not applied yet stays. A field changed on both sides takes
+# the node's value: that edit is the newer one.
+func _pull_node_form() -> void:
+	var now := _node_fields()
+	for f in now:
+		if _node_seen.has(f) and _same(now[f], _node_seen[f]):
+			continue
+		_show_field(f, now[f])
+		_node_seen[f] = now[f]
+		_form_shown[f] = _form_fields()[f]
+
+
+func _same(a: Variant, b: Variant) -> bool:
+	return typeof(a) == typeof(b) and a == b
 
 
 func _on_apply_node() -> void:
 	if _node == null:
 		_say("Add or select a node first.")
 		return
-	_node.id = _node_id.text
-	_node.speaker = _node_speaker.text
-	_node.text = _node_text.text
-	_node.event = _node_event.text
-	_node.next = _node_next.text
+	# Only what was changed here since the form showed it. The Inspector edits this same
+	# node, so writing every field back would undo its edits.
+	var form := _form_fields()
+	for f in form:
+		if _form_shown.has(f) and _same(form[f], _form_shown[f]):
+			continue
+		_node.set(f, form[f])
 	_refresh_node_list()
+	_pull_node_form()
 	_say("Applied node '%s'." % _node.id)
 
 
@@ -287,7 +370,7 @@ func _on_add_choice() -> void:
 	var c := DialogueChoiceLite.new()
 	c.text = _choice_text.text
 	c.next = _choice_next.text
-	var arr: Array[DialogueChoiceLite] = _node.choices
+	var arr: Array[DialogueChoiceLite] = _node.choices.duplicate()
 	arr.append(c)
 	_node.choices = arr
 	_choice_text.text = ""
@@ -301,7 +384,7 @@ func _on_remove_choice() -> void:
 	var sel := _choice_list.get_selected_items()
 	if sel.is_empty():
 		return
-	var arr: Array[DialogueChoiceLite] = _node.choices
+	var arr: Array[DialogueChoiceLite] = _node.choices.duplicate()
 	var idx := sel[0]
 	if idx >= 0 and idx < arr.size():
 		arr.remove_at(idx)
@@ -324,7 +407,110 @@ func _on_save() -> void:
 	var path := _folder_edit.text.path_join(_dialogue.id + ".tres")
 	var err := ResourceSaver.save(_dialogue, path)
 	if err == OK:
+		_register_uid(path)
+		_adopt_file_copy(path)
 		_reload_folder()
 		_say("Saved " + path)
 	else:
 		_say("Save failed (err %d)." % err)
+
+
+# The Inspector and scenes load the file's own copy. Make that the one this dock
+# edits, or the editor's next save writes their old copy back over this Save.
+func _adopt_file_copy(path: String) -> void:
+	if not ResourceLoader.has_cached(path):
+		_dialogue.take_over_path(path)  # nobody holds it yet
+		return
+	var cached: Resource = ResourceLoader.load(path)
+	if cached == _dialogue or not (cached is DialogueLite):
+		return
+	for p in _dialogue.get_property_list():
+		var n: String = p.name
+		if (int(p.usage) & PROPERTY_USAGE_STORAGE) and n != "script" and n != "resource_path":
+			cached.set(n, _dialogue.get(n))
+	cached.emit_changed()
+	_dialogue = cached
+
+
+# The Inspector edits this same dialogue, and Save writes the id, title and entry
+# fields back over it, so show its change here. The rest stays as typed.
+func _on_inspector_edit(prop: String) -> void:
+	if _dialogue == null or EditorInterface.get_inspector().get_edited_object() != _dialogue:
+		return
+	match prop:
+		"id": _id_edit.text = _dialogue.id
+		"title": _title_edit.text = _dialogue.title
+		"entry": _entry_edit.text = _dialogue.entry
+		"nodes":
+			_refresh_node_list()
+			if not _dialogue.nodes.has(_node):
+				_node = null
+				_choice_list.clear()
+
+
+# An edit inside a node (its fields or its choices) comes through here, undo included.
+# Show it without touching what's typed and not applied yet.
+func _on_editor_history() -> void:
+	if _dialogue == null:
+		return
+	if _node != null and not _dialogue.nodes.has(_node):
+		# deleted in the Inspector: empty the form too, so it doesn't keep showing it
+		_node = null
+		_choice_list.clear()
+		for le in [_node_id, _node_speaker, _node_event, _node_next]:
+			(le as LineEdit).text = ""
+		_node_text.text = ""
+		_node_seen.clear()
+		_form_shown.clear()
+	if _node_list_stale():
+		_refresh_node_list()
+	if _node == null:
+		return
+	var row := _node_row()
+	if row >= 0:
+		_node_list.select(row)
+	_pull_node_form()
+	_relist(_choice_list, _refresh_choice_list)
+
+
+# Rebuild the node list only when its ids changed: rebuilding on every editor action
+# (moving a sprite counts) jumped a long list back to the top.
+func _node_list_stale() -> bool:
+	var ids := []
+	for n in _dialogue.nodes:
+		if n != null:
+			ids.append(String(n.id))
+	if ids.size() != _node_list.item_count:
+		return true
+	for i in ids.size():
+		if _node_list.get_item_text(i) != ids[i]:
+			return true
+	return false
+
+
+func _node_row() -> int:
+	var row := 0
+	for n in _dialogue.nodes:
+		if n == null:
+			continue
+		if n == _node:
+			return row
+		row += 1
+	return -1
+
+
+# Rebuild a list, keeping the picked row picked (Remove works off it).
+func _relist(list: ItemList, refresh: Callable) -> void:
+	var sel := list.get_selected_items()
+	refresh.call()
+	if not sel.is_empty() and sel[0] < list.item_count:
+		list.select(sel[0])
+
+
+# A file written into a folder made this session isn't in the editor's file list
+# yet, so its UID stayed unknown and the first Play of a scene using it warned
+# "invalid UID" (a yellow Debugger badge). Register it the moment it's written.
+static func _register_uid(path: String) -> void:
+	var uid := ResourceLoader.get_resource_uid(path)
+	if uid != ResourceUID.INVALID_ID and not ResourceUID.has_id(uid):
+		ResourceUID.add_id(uid, path)

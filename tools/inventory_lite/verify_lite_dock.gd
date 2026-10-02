@@ -38,6 +38,19 @@ func _ready() -> void:
 	_assert(reloaded != null and str(reloaded.id) == "sword", "saved id persisted (got '%s')" % (reloaded.id if reloaded else "<null>"))
 	_assert(int(reloaded.max_stack) == 5, "saved max_stack persisted (got %d)" % (reloaded.max_stack if reloaded else -1))
 
+	# the list shows the name typed into the form, not the file, and keeps up with a rename
+	dock._set_prop("name", "Iron Sword")
+	dock._on_save()
+	await get_tree().process_frame
+	var idx: int = Array(dock._paths).find(dock._current_path)
+	var label: String = dock._list.get_item_text(idx) if idx >= 0 else "<missing>"
+	_assert(label == "Iron Sword", "the list shows the item's name, not its file name (got '%s')" % label)
+	dock._set_prop("name", "")
+	dock._on_save()
+	await get_tree().process_frame
+	label = dock._list.get_item_text(idx) if idx >= 0 else "<missing>"
+	_assert(label == dock._current_path.get_file().get_basename(), "a blank name falls back to the file name (got '%s')" % label)
+
 	# duplicate
 	dock._on_duplicate()
 	await get_tree().process_frame
@@ -47,6 +60,8 @@ func _ready() -> void:
 	dock._on_delete()
 	await get_tree().process_frame
 	_assert(_count_tres() == 1, "Delete removed one .tres")
+
+	await _new_names_and_numbers(dock)
 
 	dock.queue_free()
 	_reset_dir()
@@ -88,3 +103,42 @@ func _assert(cond: bool, msg: String) -> void:
 	else:
 		_failures += 1
 		printerr("FAIL: " + msg)
+
+
+# New starts from a name and an id, and counts new_item, new_item_2, ... the
+# same way the Setup tab's New item does, so the two carry on from each other.
+func _new_names_and_numbers(dock: Control) -> void:
+	var dir := "user://lite_dock_new_test/"
+	_wipe(dir)
+	dock._dir = dir
+	dock._on_new()
+	var first: String = dock._current_path
+	var it1: Resource = _fresh(first)
+	_assert(first.get_file() == "new_item.tres" and it1 != null and str(it1.id) == "new_item" and str(it1.name) == "New Item",
+		"New gives its item an id and a name (%s: %s / %s)" % [first.get_file(), it1.id if it1 else "?", it1.name if it1 else "?"])
+	_assert(dock._current != null and str(dock._current.name) == "New Item", "the form shows that name straight away")
+	_assert(String(dock._status.text).begins_with("Made " + first), "the status says where it went (%s)" % dock._status.text)
+	var setup: Object = load("res://addons/inventory_lite/editor/inventory_chooser_dock.gd").new()
+	var second: String = setup.make_item(dir)
+	_assert(second.get_file() == "new_item_2.tres", "the Setup tab's New item takes the next number (%s)" % second.get_file())
+	dock._on_new()
+	var third: String = dock._current_path
+	var it3: Resource = _fresh(third)
+	_assert(third.get_file() == "new_item_3.tres" and it3 != null and str(it3.id) == "new_item_3" and str(it3.name) == "New Item 3",
+		"and this tab carries on after it (%s: %s)" % [third.get_file(), it3.name if it3 else "?"])
+	setup.free()
+	_wipe(dir)
+	dock._dir = TEST_DIR
+
+
+# Straight from disk, past anything an earlier step left in the cache.
+func _fresh(path: String) -> Resource:
+	return ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE)
+
+
+func _wipe(dir: String) -> void:
+	var d := DirAccess.open(dir)
+	if d == null:
+		return
+	for f in d.get_files():
+		d.remove(f)

@@ -5,9 +5,24 @@
     "description": "Gather the town's lost coins, buy the traveler's sword, and equip it.",
     "autostart": true,
     "objectives": [
-      { "id": "coins", "type": "collect", "target": "coin", "required": 5 },
-      { "id": "sword", "type": "collect", "target": "sword", "required": 1 },
-      { "id": "geared", "type": "collect", "target": "geared", "required": 1 }
+      {
+        "id": "coins",
+        "type": "collect",
+        "target": "coin",
+        "required": 5
+      },
+      {
+        "id": "sword",
+        "type": "collect",
+        "target": "sword",
+        "required": 1
+      },
+      {
+        "id": "geared",
+        "type": "collect",
+        "target": "geared",
+        "required": 1
+      }
     ]
   }
 ]

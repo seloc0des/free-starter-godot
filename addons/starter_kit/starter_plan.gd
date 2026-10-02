@@ -156,7 +156,7 @@ static func steps(state: Dictionary) -> Array[Dictionary]:
 	out.append({
 		"id": "quests",
 		"title": "Change the goal",
-		"why": "content/quests.json decides what you're collecting or clearing and how many. Change a number, press Play, watch the counter follow. Nothing else needs to change.",
+		"why": "content/quests.json decides what you're collecting or clearing and how many. Change a number, press Play, watch the counter follow. A smaller number just works. A bigger one needs more of them placed in the level, because each level holds exactly as many as the quest asks for.",
 		"done": qst,
 	})
 	out.append({

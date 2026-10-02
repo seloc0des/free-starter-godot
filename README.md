@@ -25,8 +25,8 @@ in the `content/` data files.
 
 ## Start Here
 
-When the project opens, look for the **Start Here** tab on the right, next to the
-Inspector. It's a four-item list that ticks itself off as you work, and it holds
+When the project opens, look for the **Start Here** tab in the bottom panel, next
+to Output. It's a four-item list that ticks itself off as you work, and it holds
 the switches for all fourteen systems. If you read one thing, read that panel.
 
 ## The fourteen systems

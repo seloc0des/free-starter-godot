@@ -58,6 +58,9 @@ func _ready() -> void:
 	ok = _exp(skeletons.size() == 2, "2 skeletons in the crypt") and ok
 	var player: CharacterBody2D = world.get_node("Player")
 	ok = _exp(player.is_in_group("player"), "mover put the player in the player group") and ok
+	# The checks below read positions across frames. A pad someone's holding (or a
+	# drifting stick) would walk the knight mid-check, so freeze input for the test.
+	ControllersLite.lock_movement(&"self_test")
 
 	# --- D) death respawns the knight at the door ---
 	var spawn: Vector2 = player.global_position

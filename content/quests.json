@@ -4,7 +4,12 @@
     "title": "Gather Herbs",
     "description": "The healer needs 3 herbs from the old cellar.",
     "objectives": [
-      { "id": "collect_herb", "type": "collect", "target": "herb", "required": 3 }
+      {
+        "id": "collect_herb",
+        "type": "collect",
+        "target": "herb",
+        "required": 3
+      }
     ]
   }
 ]

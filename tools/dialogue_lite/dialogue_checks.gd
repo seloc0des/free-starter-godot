@@ -17,26 +17,26 @@ static func run(_host: Node) -> Dictionary:
 	var on_line := func(s: String, t: String) -> void: shown.append(s + ": " + t)
 	var on_event := func(e: String) -> void: events.append(e)
 	var on_finish := func(id: String) -> void: finished["id"] = id
-	DialoguesLite.line_shown.connect(on_line)
-	DialoguesLite.event_fired.connect(on_event)
-	DialoguesLite.dialogue_finished.connect(on_finish)
+	_dialogues_lite().line_shown.connect(on_line)
+	_dialogues_lite().event_fired.connect(on_event)
+	_dialogues_lite().dialogue_finished.connect(on_finish)
 
-	DialoguesLite.register(DEMO.healer_intro())
+	_dialogues_lite().register(DEMO.healer_intro())
 
-	ok = _chk(lines, DialoguesLite.start("healer_intro"), "start() returns true") and ok
+	ok = _chk(lines, _dialogues_lite().start("healer_intro"), "start() returns true") and ok
 	ok = _chk(lines, shown.size() == 1, "1 line shown at entry (n1)") and ok
-	DialoguesLite.choose(0)                                  # -> n2 (fires event)
+	_dialogues_lite().choose(0)                                  # -> n2 (fires event)
 	ok = _chk(lines, events.size() == 1 and events[0] == "give_quest:gather_herbs", "event fired on n2") and ok
 	ok = _chk(lines, shown.size() == 2, "2 lines after choose") and ok
-	DialoguesLite.advance()                                  # -> n3
+	_dialogues_lite().advance()                                  # -> n3
 	ok = _chk(lines, shown.size() == 3, "3 lines after advance") and ok
-	DialoguesLite.advance()                                  # empty next -> finish
+	_dialogues_lite().advance()                                  # empty next -> finish
 	ok = _chk(lines, finished["id"] == "healer_intro", "finished with correct id") and ok
-	ok = _chk(lines, not DialoguesLite.is_active(), "inactive after finish") and ok
+	ok = _chk(lines, not _dialogues_lite().is_active(), "inactive after finish") and ok
 
-	DialoguesLite.line_shown.disconnect(on_line)
-	DialoguesLite.event_fired.disconnect(on_event)
-	DialoguesLite.dialogue_finished.disconnect(on_finish)
+	_dialogues_lite().line_shown.disconnect(on_line)
+	_dialogues_lite().event_fired.disconnect(on_event)
+	_dialogues_lite().dialogue_finished.disconnect(on_finish)
 
 	lines.append("")
 	lines.append("--- transcript ---")
@@ -49,3 +49,13 @@ static func run(_host: Node) -> Dictionary:
 static func _chk(lines: Array[String], cond: bool, label: String) -> bool:
 	lines.append(("[ok] " if cond else "[XX] ") + label)
 	return cond
+
+
+# DialoguesLite is looked up when used instead of named. A script that names an
+# autoload won't compile until the plugin that adds it is switched on, so a fresh
+# install printed parse errors.
+const DIALOGUES_LITE := preload("res://addons/dialogue_lite/dialogue_manager_lite.gd")
+
+
+static func _dialogues_lite() -> DIALOGUES_LITE:
+	return (Engine.get_main_loop() as SceneTree).root.get_node(^"DialoguesLite") as DIALOGUES_LITE

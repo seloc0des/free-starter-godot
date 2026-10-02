@@ -19,14 +19,14 @@ func _ready() -> void:
 	if _health == null:
 		_health = _find_sibling_health()
 	if _health != null:
-		_health.died.connect(func() -> void: CombatLite.entity_died.emit(_owner_node()))
+		_health.died.connect(func() -> void: _combat_lite().entity_died.emit(_owner_node()))
 
 
 func receive_hit(amount: float, source: Node) -> void:
 	hit.emit(amount, source)
 	if _health != null:
 		_health.take_damage(amount, source)
-	CombatLite.hit_landed.emit(global_position, amount, source)
+	_combat_lite().hit_landed.emit(global_position, amount, source)
 
 
 func _find_sibling_health() -> HealthLite:
@@ -40,3 +40,13 @@ func _find_sibling_health() -> HealthLite:
 
 func _owner_node() -> Node:
 	return get_parent() if get_parent() != null else self
+
+
+# CombatLite is looked up when used instead of named. A script that names an autoload
+# won't compile until the plugin that adds it is switched on, so a fresh install
+# printed parse errors.
+const COMBAT_LITE := preload("res://addons/combat_lite/combat_events_lite.gd")
+
+
+static func _combat_lite() -> COMBAT_LITE:
+	return (Engine.get_main_loop() as SceneTree).root.get_node(^"CombatLite") as COMBAT_LITE

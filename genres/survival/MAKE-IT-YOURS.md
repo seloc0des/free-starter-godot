@@ -47,7 +47,7 @@ and its autoload is already running, so there is nothing to wire.
 
 Each Lite is the free cut of a paid system. The full versions of every system
 in this project ship together as **SELODEV Complete** on
-https://selodev.itch.io. They drop into the same folders and speak the same
+https://selodev.com/go/complete. They drop into the same folders and speak the same
 event bus, so your game keeps working.
 
 ## 7. Publish it

@@ -3,7 +3,7 @@ extends Node
 
 # Single-container inventory. Stacks items by id, respects max_stack, fixed
 # capacity in number of *slots* (not weight). No categories enforcement, no
-# themes, no UI — wire your own list view to the signals below.
+# themes. BagListLite is a plain list of it; for your own UI, use the signals below.
 #
 # This is the **working core** of the selodev Inventory addon. Features
 # cut from the paid Pro tier:

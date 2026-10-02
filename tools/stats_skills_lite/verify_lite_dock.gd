@@ -7,6 +7,7 @@ extends Node
 
 const DOCK := preload("res://addons/stats_skills_lite/editor/lite_dock.gd")
 const TEST_DIR := "user://lite_dock_test/"
+const NEW_DIR := "user://lite_dock_test_new/"
 
 var _passes := 0
 var _failures := 0
@@ -48,10 +49,52 @@ func _ready() -> void:
 	await get_tree().process_frame
 	_assert(_count_tres() == 1, "Delete removed one .tres")
 
+	# New over the name of a file that's gone, while something still holds the old
+	# copy (reloaded, above): it has to start fresh, not hand back the old one
+	DirAccess.remove_absolute(saved_path)
+	dock._on_new()
+	_assert(dock._current_path == saved_path and str(dock._current.id) == "new_stat", "New over a deleted file's name starts fresh (id %s)" % str(dock._current.id))
+
+	# NEW: numbered, with an id and a name to start from
+	_wipe(NEW_DIR)
+	dock._dir = NEW_DIR
+	dock._on_new()
+	var n1: String = dock._current_path
+	var r1 := _disk(n1)
+	_assert(n1.get_file() == "new_stat.tres" and str(r1.id) == "new_stat" and str(r1.display_name) == "New Stat", "New makes new_stat.tres with the id new_stat and the name New Stat")
+	dock._on_new()
+	var n2: String = dock._current_path
+	_assert(n2.get_file() == "new_stat_2.tres" and str(_disk(n2).id) == "new_stat_2" and str(dock._current.id) == "new_stat_2", "a second New is new_stat_2, and it's the one being edited")
+
+	# RENAME in the Inspector (the file's own copy), then Save here: it sticks
+	var on_file: Resource = load(n2)
+	on_file.display_name = "Stamina"
+	dock.sync_from(on_file, "display_name")
+	dock._on_save()
+	_assert(str(_disk(n2).display_name) == "Stamina", "a rename made in the Inspector survives the tab's Save")
+	var other: Resource = load(n1)
+	other.display_name = "Nope"
+	dock.sync_from(other, "display_name")
+	_assert(str(dock._current.display_name) == "Stamina", "an edit to a different file leaves the working copy alone")
+	_wipe(NEW_DIR)
+
 	dock.queue_free()
 	_reset_dir()
 	print("--- %d passed, %d failed ---" % [_passes, _failures])
 	get_tree().quit(0 if _failures == 0 else 1)
+
+
+# what's really on disk, not the copy in memory
+func _disk(path: String) -> Resource:
+	return ResourceLoader.load(path, "", ResourceLoader.CACHE_MODE_IGNORE)
+
+
+func _wipe(dir_path: String) -> void:
+	if not DirAccess.dir_exists_absolute(dir_path):
+		return
+	for f in DirAccess.get_files_at(dir_path):
+		DirAccess.remove_absolute(dir_path.path_join(f))
+	DirAccess.remove_absolute(dir_path)
 
 
 func _count_tres() -> int:

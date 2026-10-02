@@ -3,7 +3,8 @@ extends Node
 # Quests — Lite autoload. Holds registered quests and their per-objective
 # progress. Two objective types: COLLECT and KILL. Game code calls
 # `QuestsLite.report_collect(item_id, n)` or `QuestsLite.report_kill(enemy_id, n)`
-# to advance progress.
+# to advance progress. The no-code nodes (QuestBoardLite, QuestTargetLite,
+# QuestTrackerLite) are that game code, so a buyer never has to be.
 #
 # Cut from Pro:
 #   * 6 more objective types (USE, CURRENCY, TALK, REACH, FLAG, CUSTOM)
@@ -38,6 +39,7 @@ var _progress: Dictionary = {}  # id -> Dictionary[objective_id -> int]
 func register(quest: QuestLite) -> void:
 	if quest == null or String(quest.id) == "":
 		return
+	_unique_objective_ids(quest)
 	_quests[quest.id] = quest
 	_state[quest.id] = State.AVAILABLE
 	_progress[quest.id] = {}
@@ -46,6 +48,28 @@ func register(quest: QuestLite) -> void:
 			continue
 		_progress[quest.id][String(o.id)] = 0
 	quest_registered.emit(quest.id)
+
+
+# Progress is kept per objective id, so two left blank (or typed the same)
+# shared a count: 3 herbs finished "3 herbs and 2 slimes". The first keeps its
+# id, each repeat gets its own, named like the Setup tab names them.
+func _unique_objective_ids(quest: QuestLite) -> void:
+	var keeper := {}  # id -> the objective that keeps it
+	for o in quest.objectives:
+		if o != null and not keeper.has(String(o.id)):
+			keeper[String(o.id)] = o
+	for o in quest.objectives:
+		if o == null or keeper[String(o.id)] == o:
+			continue
+		var stem: String = ("defeat_" if int(o.type) == QuestObjectiveLite.Type.KILL else "collect_") \
+			+ (String(o.target_id).to_snake_case() if String(o.target_id) != "" else "item")
+		var cand: String = stem
+		var n := 2
+		while keeper.has(cand):
+			cand = "%s_%d" % [stem, n]
+			n += 1
+		o.id = cand
+		keeper[cand] = o
 
 
 func register_many(quests: Array) -> void:

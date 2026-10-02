@@ -16,6 +16,9 @@ func _ready() -> void:
 	var rp: Dictionary = await CHECKS.run_physics(self)
 	lines.append_array(rp["lines"])
 	ok = ok and rp["ok"]
+	var ri: Dictionary = await CHECKS.run_interaction(self)
+	lines.append_array(ri["lines"])
+	ok = ok and ri["ok"]
 	_banner.text = "PASS" if ok else "FAIL"
 	_banner.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if ok else Color(0.95, 0.35, 0.35))
 	for l in lines:

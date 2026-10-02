@@ -1,18 +1,20 @@
 extends Node
 
-# Dialogue — Lite. Runs branching conversations authored as data. Register your
-# DialogueLite resources, then start(id); the drop-in DialogueBoxLite renders it.
+# Dialogue (Lite). Runs branching conversations authored as data. Write them in
+# the Dialogue dock and let the Dialogue · Setup tab wire one to an NPC or to the
+# scene loading, or register() them and start(id) from code. The drop-in
+# DialogueBoxLite renders it either way.
 #
-# This is the **working core** of the selodev Dialogue addon. Features cut from
-# the paid Pro tier:
+# This is the **working core** of the selodev Dialogue addon, authoring dock and
+# Setup tab included. What the paid Pro tier adds:
 #
-#   * Conditions / flags / variables         — Pro
-#   * Direct quest & inventory hooks          — Pro
-#   * Character portraits + expressions       — Pro
-#   * Typewriter / letter-by-letter text      — Pro
-#   * Save-aware conversation state           — Pro
-#   * Localization (CSV / translation keys)   — Pro
-#   * Editor authoring dock                   — Pro
+#   * Conditions / flags / variables
+#   * Direct quest & inventory hooks
+#   * Character portraits + expressions
+#   * Typewriter / letter-by-letter text
+#   * Save-aware conversation state
+#   * Localization (CSV / translation keys)
+#   * Conditions and actions in the authoring dock
 #
 # Lite fires a bare `event` string per node so you can wire outcomes yourself.
 
@@ -71,6 +73,20 @@ func start(id: String) -> bool:
 	dialogue_started.emit(id)
 	_goto(String(dialogue.entry))
 	return true
+
+
+## Start a conversation straight from its .tres, registering it first, so one
+## from any folder plays. This is what DialogueTriggerLite calls. A second touch
+## mid-talk won't restart the one that's already running.
+func start_dialogue(dialogue: Resource) -> bool:
+	var d := dialogue as DialogueLite
+	if d == null or String(d.id) == "":
+		push_warning("[dialogue] start_dialogue needs a DialogueLite resource with an id.")
+		return false
+	if is_active():
+		return false
+	register(d)
+	return start(d.id)
 
 
 ## Advance a plain (no-choice) node. No-op while choices are pending.

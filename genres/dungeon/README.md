@@ -55,7 +55,7 @@ Every other system carries its own suite under `tools/` as well.
 
 Each Lite system is the free cut of a paid one. The full versions of everything
 in this project, plus the Game Kit that wires them together, ship in one
-package: **SELODEV Complete** on https://selodev.itch.io. One purchase, every
+package: **SELODEV Complete** on https://selodev.com/go/complete. One purchase, every
 system, drop-in upgrades. Your content and scenes keep working.
 
 ## License
