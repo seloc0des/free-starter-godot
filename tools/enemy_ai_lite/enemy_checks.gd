@@ -48,7 +48,7 @@ static func run_physics(host: Node) -> Dictionary:
 	brain_a.target_acquired.connect(func(_t: Node2D) -> void: acquired["n"] += 1)
 	brain_a.attacked.connect(func(_t: Node2D) -> void: attacks["n"] += 1)
 	var on_bus := func(_e: Node, _t: Node) -> void: attacks["bus"] += 1
-	EnemyAILite.attack_started.connect(on_bus)
+	_enemy_ai_lite().attack_started.connect(on_bus)
 
 	await _frames(tree, 3)
 	ok = _chk(lines, brain_a.state == EnemyBrainLite.CHASE, "player in detect radius -> chase") and ok
@@ -61,7 +61,7 @@ static func run_physics(host: Node) -> Dictionary:
 	ok = _chk(lines, attacks["n"] == 1 and attacks["bus"] == 1, "attack fired once (signal + bus)") and ok
 	await _wait(tree, 0.15)
 	ok = _chk(lines, attacks["n"] == 1, "cooldown holds: no second attack yet") and ok
-	EnemyAILite.attack_started.disconnect(on_bus)
+	_enemy_ai_lite().attack_started.disconnect(on_bus)
 	player_a.queue_free()
 	body_a.queue_free()
 
@@ -129,3 +129,13 @@ static func _wait(tree: SceneTree, seconds: float) -> void:
 static func _chk(lines: Array[String], cond: bool, label: String) -> bool:
 	lines.append(("[ok] " if cond else "[XX] ") + label)
 	return cond
+
+
+# EnemyAILite is looked up when used instead of named. A script that names an autoload
+# won't compile until the plugin that adds it is switched on, so a fresh install
+# printed parse errors.
+const ENEMY_AI_LITE := preload("res://addons/enemy_ai_lite/enemy_ai_bus_lite.gd")
+
+
+static func _enemy_ai_lite() -> ENEMY_AI_LITE:
+	return (Engine.get_main_loop() as SceneTree).root.get_node(^"EnemyAILite") as ENEMY_AI_LITE

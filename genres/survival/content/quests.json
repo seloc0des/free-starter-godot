@@ -5,9 +5,24 @@
     "description": "Night is coming. Gather firewood and mushrooms, then craft a chest at the camp sign.",
     "autostart": true,
     "objectives": [
-      { "id": "firewood", "type": "collect", "target": "wood", "required": 3 },
-      { "id": "supper", "type": "collect", "target": "mushroom", "required": 2 },
-      { "id": "chest", "type": "collect", "target": "camp_chest", "required": 1 }
+      {
+        "id": "firewood",
+        "type": "collect",
+        "target": "wood",
+        "required": 3
+      },
+      {
+        "id": "supper",
+        "type": "collect",
+        "target": "mushroom",
+        "required": 2
+      },
+      {
+        "id": "chest",
+        "type": "collect",
+        "target": "camp_chest",
+        "required": 1
+      }
     ]
   }
 ]

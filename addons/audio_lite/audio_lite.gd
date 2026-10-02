@@ -17,6 +17,7 @@ var _active_music: AudioStreamPlayer = null
 var _sfx_pool: Array[AudioStreamPlayer] = []
 var _sfx_next := 0
 var _fades := {}                             # player -> its live fade Tween
+var _asked := {}                             # music player -> the stream it was given (it may play a looping copy)
 
 
 func _ready() -> void:
@@ -28,13 +29,15 @@ func _ready() -> void:
 
 # ---- music ---------------------------------------------------------------
 
-## Crossfade to a track. Same stream twice is a no-op.
+## Crossfade to a track. Same stream twice is a no-op. It loops even when the
+## file was imported with Loop off.
 func play_music(stream: AudioStream, fade := 1.0) -> void:
 	if stream == null or stream == music_playing():
 		return
 	var incoming := _music_b if _active_music == _music_a else _music_a
 	var outgoing := _active_music
-	incoming.stream = stream
+	incoming.stream = _looping(stream)
+	_asked[incoming] = stream
 	incoming.volume_db = -60.0
 	incoming.play()
 	_fade_player(incoming, 0.0, fade)
@@ -53,7 +56,9 @@ func stop_music(fade := 1.0) -> void:
 
 
 func music_playing() -> AudioStream:
-	return _active_music.stream if _active_music != null and _active_music.playing else null
+	if _active_music == null or not _active_music.playing:
+		return null
+	return _asked.get(_active_music, _active_music.stream)
 
 
 # ---- sfx -----------------------------------------------------------------
@@ -101,6 +106,30 @@ func _make_player(bus_name: String) -> AudioStreamPlayer:
 	return p
 
 
+# 4.7 imports an .ogg with Loop off, and the box is in the Import dock where a
+# non-coder never looks, so scene music played once and stopped. Music gets a
+# looping copy instead; the file, and a sound effect playing it, stay as imported.
+func _looping(stream: AudioStream) -> AudioStream:
+	if stream is AudioStreamOggVorbis or stream is AudioStreamMP3:
+		if bool(stream.get("loop")):
+			return stream
+		var copy: AudioStream = stream.duplicate()
+		copy.set("loop", true)
+		return copy
+	if stream is AudioStreamWAV:
+		var wav: AudioStreamWAV = stream
+		if wav.loop_mode != AudioStreamWAV.LOOP_DISABLED:
+			return stream
+		var w: AudioStreamWAV = wav.duplicate()
+		w.loop_mode = AudioStreamWAV.LOOP_FORWARD
+		w.loop_begin = 0
+		# on the last real sample: Godot 4.7 plays the end sample, then goes on from begin + 1, so
+		# the frame count read one past the data and clicked every time round
+		w.loop_end = roundi(wav.get_length() * wav.mix_rate) - 1
+		return w
+	return stream
+
+
 func _fade_player(p: AudioStreamPlayer, to_db: float, fade: float, stop_after := false) -> void:
 	# kill any in-flight fade on this player — otherwise a rapid re-crossfade
 	# inherits the old fade's pending stop() and kills the comeback track
@@ -115,9 +144,16 @@ func _fade_player(p: AudioStreamPlayer, to_db: float, fade: float, stop_after :=
 		return
 	var tw := create_tween()
 	_fades[p] = tw
-	tw.tween_property(p, "volume_db", to_db, fade)
+	tw.tween_method(_equal_power.bind(p, db_to_linear(p.volume_db), db_to_linear(to_db)), 0.0, 1.0, fade)
 	if stop_after:
 		tw.tween_callback(p.stop)
+
+
+# Equal power, not a straight line in dB: two of those both sit near -30 dB
+# halfway, so every crossfade had a ~27 dB hole in the middle.
+func _equal_power(x: float, p: AudioStreamPlayer, from: float, to: float) -> void:
+	var k := sin(x * PI * 0.5) if to >= from else 1.0 - cos(x * PI * 0.5)
+	p.volume_db = linear_to_db(maxf(lerpf(from, to, k), 0.0001))
 
 
 func _grab_sfx() -> AudioStreamPlayer:

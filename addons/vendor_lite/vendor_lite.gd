@@ -13,7 +13,7 @@ extends Node
 #   * Conditional offers (flag / level / quest gates)
 #   * Timed offers (`available_until`)
 #   * Category-only sell-back filtering (e.g. junk-only NPC trade-in)
-#   * Drop-in `ShopUI` Control
+#   * Styled `ShopUI` (icons, Buy/Sell tabs). Lite has the plain ShopPanelLite.
 #   * Shared `Events` autoload + save-contract auto-join
 
 signal purchase_completed(item: Resource, count: int, paid: int)
@@ -35,6 +35,8 @@ const REASON_NO_FUNDS := "not_enough_funds"
 const REASON_OUT_OF_STOCK := "out_of_stock"
 const REASON_NOT_OWNED := "item_not_owned"
 const REASON_NOT_LISTED := "item_not_in_stock"
+const REASON_BAG_FULL := "bag_full"
+const REASON_NO_PLAYER := "no_player"
 
 var _wallet: Node
 var _inventory: Node
@@ -53,6 +55,34 @@ func bind_wallet(node: Node) -> void:
 
 func bind_inventory(node: Node) -> void:
 	_inventory = node
+
+
+func get_wallet() -> Node:
+	return _wallet if is_instance_valid(_wallet) else null
+
+
+func get_inventory() -> Node:
+	return _inventory if is_instance_valid(_inventory) else null
+
+
+## Binds the player's wallet and bag when nothing else has: the first node in the
+## "player" group, then the first node on or under it with the right methods.
+## Wallet Path / Inventory Path (or bind_*) still win. Returns "" when both are
+## bound, else what's missing: no_player, no_wallet or no_inventory.
+func link_player() -> String:
+	if get_wallet() == null or get_inventory() == null:
+		var player: Node = get_tree().get_first_node_in_group("player") if is_inside_tree() else null
+		if player == null:
+			return REASON_NO_PLAYER
+		if get_wallet() == null:
+			_wallet = _find_with(player, ["get_balance", "has_amount", "subtract", "add"])
+		if get_inventory() == null:
+			_inventory = _find_with(player, ["add_item", "remove_item", "count_item"])
+	if get_wallet() == null:
+		return REASON_NO_WALLET
+	if get_inventory() == null:
+		return REASON_NO_INVENTORY
+	return ""
 
 
 func buy(item: Resource, count: int = 1) -> bool:
@@ -76,7 +106,16 @@ func buy(item: Resource, count: int = 1) -> bool:
 	if int(entry.get("stock", -1)) >= 0:
 		entry.stock = int(entry.stock) - count
 	if _inventory.has_method("add_item"):
-		_inventory.add_item(item, count)
+		var left: Variant = _inventory.add_item(item, count)
+		# A full bag hands back what didn't fit. Undo the sale rather than keep the gold.
+		if typeof(left) == TYPE_INT and int(left) > 0:
+			if int(left) < count and _inventory.has_method("remove_item"):
+				_inventory.remove_item(item, count - int(left))
+			if total > 0:
+				_wallet.add(total)
+			if int(entry.get("stock", -1)) >= 0:
+				entry.stock = int(entry.stock) + count
+			_reject(REASON_BAG_FULL); return false
 	purchase_completed.emit(item, count, total)
 	stock_changed.emit()
 	return true
@@ -150,3 +189,19 @@ func _find_entry(item: Resource) -> Dictionary:
 
 func _reject(reason: String) -> void:
 	transaction_rejected.emit(reason)
+
+
+# The node itself, then its children, depth first.
+func _find_with(node: Node, methods: Array) -> Node:
+	var ok := true
+	for m in methods:
+		if not node.has_method(m):
+			ok = false
+			break
+	if ok:
+		return node
+	for c in node.get_children():
+		var f := _find_with(c, methods)
+		if f != null:
+			return f
+	return null

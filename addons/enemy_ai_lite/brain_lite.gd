@@ -4,6 +4,7 @@ extends Node
 # The free enemy brain: idle -> chase -> attack, with a leash that walks it
 # home. Drives the parent CharacterBody2D (top-down). Hunts the nearest node in
 # `target_group` — the Controller pack puts the player there.
+# A Combat hitbox on the body gets switched on for each attack.
 
 signal state_changed(from: StringName, to: StringName)
 signal target_acquired(target: Node2D)
@@ -21,6 +22,7 @@ const RETURN := &"return"
 @export var attack_radius: float = 40.0
 @export var give_up_radius: float = 320.0    ## leash: this far from home -> walk back
 @export var attack_cooldown: float = 1.0
+@export var attack_duration: float = 0.25    ## how long a Combat hitbox on the body stays live per attack
 @export var target_group: StringName = &"player"
 @export var enabled: bool = true
 
@@ -30,6 +32,8 @@ var home := Vector2.ZERO
 
 var _body: CharacterBody2D = null
 var _cooldown := 0.0
+var _swing: Area2D = null     # the hitbox switched on for the current attack
+var _swing_left := 0.0
 
 
 func _ready() -> void:
@@ -43,8 +47,13 @@ func _ready() -> void:
 
 func _physics_process(delta: float) -> void:
 	if not enabled:
+		# switched off mid-swing (death, cutscene): don't leave the hitbox live
+		if _swing_left > 0.0:
+			_swing_left = 0.0
+			_arm(false)
 		return
 	_cooldown = maxf(0.0, _cooldown - delta)
+	_tick_swing(delta)
 	_update_target()
 
 	# leash applies while engaged, mid-attack included
@@ -89,8 +98,11 @@ func _do_attack() -> void:
 		return
 	if _cooldown <= 0.0:
 		_cooldown = attack_cooldown
+		_swing = _hitbox()
+		_swing_left = attack_duration
+		_arm(true)
 		attacked.emit(target)
-		EnemyAILite.attack_started.emit(_body, target)
+		_enemy_ai_lite().attack_started.emit(_body, target)
 
 
 func _do_return() -> void:
@@ -133,10 +145,44 @@ func _drop_target() -> void:
 	target_lost.emit()
 
 
+# A Combat hitbox (Pro or Lite) on the body, told apart by its exports so this
+# brain never needs the Combat pack. A hitbox only hits when something starts
+# touching it, so it goes off after each attack and back on for the next one:
+# coming back on is what hits the player again while they stay in reach.
+func _hitbox() -> Area2D:
+	for c in _body.get_children():
+		if c is Area2D and "team" in c and ("damage" in c or "base_damage" in c):
+			return c as Area2D
+	return null
+
+
+func _tick_swing(delta: float) -> void:
+	if _swing_left <= 0.0:
+		return
+	_swing_left -= delta
+	if _swing_left <= 0.0:
+		_arm(false)
+
+
+func _arm(on: bool) -> void:
+	if _swing != null and is_instance_valid(_swing):
+		_swing.set_deferred("monitoring", on)
+
+
 func _switch(to: StringName) -> void:
 	if to == state:
 		return
 	var from := state
 	state = to
 	state_changed.emit(from, to)
-	EnemyAILite.state_changed.emit(_body if _body != null else self, from, to)
+	_enemy_ai_lite().state_changed.emit(_body if _body != null else self, from, to)
+
+
+# EnemyAILite is looked up when used instead of named. A script that names an autoload
+# won't compile until the plugin that adds it is switched on, so a fresh install
+# printed parse errors.
+const ENEMY_AI_LITE := preload("res://addons/enemy_ai_lite/enemy_ai_bus_lite.gd")
+
+
+static func _enemy_ai_lite() -> ENEMY_AI_LITE:
+	return (Engine.get_main_loop() as SceneTree).root.get_node(^"EnemyAILite") as ENEMY_AI_LITE

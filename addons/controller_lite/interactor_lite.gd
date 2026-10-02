@@ -6,7 +6,7 @@ extends Area2D
 
 signal focus_changed(interactable: Node)     # null when nothing in reach
 
-@export var action: StringName = &"ui_accept"
+@export var action: StringName = &"interact"
 @export var enabled: bool = true
 
 var _in_reach: Array[InteractableLite] = []
@@ -30,7 +30,8 @@ func _unhandled_input(event: InputEvent) -> void:
 
 
 func interact() -> void:
-	if enabled and _focus != null:
+	# mid-conversation, E mustn't start something else behind the dialogue box
+	if enabled and _focus != null and not _controllers_lite().in_dialogue():
 		_focus.interact(_owner_body())
 
 
@@ -62,12 +63,22 @@ func _refresh_focus() -> void:
 	if best == _focus:
 		return
 	if _focus != null and is_instance_valid(_focus):
-		_focus.set_focused(false)
+		_focus.set_focused(false, self)
 	_focus = best
 	if _focus != null:
-		_focus.set_focused(true)
+		_focus.set_focused(true, self)
 	focus_changed.emit(_focus)
 
 
 func _owner_body() -> Node:
 	return get_parent() if get_parent() != null else self
+
+
+# ControllersLite is looked up when used instead of named. A script that names an
+# autoload won't compile until the plugin that adds it is switched on, so a fresh
+# install printed parse errors.
+const CONTROLLERS_LITE := preload("res://addons/controller_lite/controllers_bus_lite.gd")
+
+
+static func _controllers_lite() -> CONTROLLERS_LITE:
+	return (Engine.get_main_loop() as SceneTree).root.get_node(^"ControllersLite") as CONTROLLERS_LITE

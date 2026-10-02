@@ -240,7 +240,14 @@ func _on_open(path: String) -> void:
 		_say("Couldn't find %s. It should be in the content folder." % path, WARN_COLOR)
 		return
 	EditorInterface.select_file(path)
-	_say("Opened it in the file list. Double-click it there to edit, or open it in any text editor.", OK_COLOR)
+	# Open it where they can type, the way double-clicking it does. Selecting it in
+	# the file list alone left a first-timer staring at a highlighted row.
+	var res := load(path)
+	if res == null:
+		_say("Found it in the file list. Double-click it there to edit, or open it in any text editor.", WARN_COLOR)
+		return
+	EditorInterface.edit_resource(res)
+	_say("Opened %s in the script editor. Change it there, save with File → Save, then press Play." % path.get_file(), OK_COLOR)
 
 
 func _on_play() -> void:

@@ -8,6 +8,7 @@ extends Node
 
 const CHOOSER := preload("res://addons/save_load_lite/editor/save-load_chooser_dock.gd")
 const SAVEABLE_SCRIPT := preload("res://addons/save_load_lite/saveable.gd")
+const KEYS_SCRIPT := preload("res://addons/save_load_lite/save_keys_lite.gd")
 
 var _passes := 0
 var _failures := 0
@@ -85,6 +86,8 @@ func _ready() -> void:
 	_assert(fresh != buried, "did not hijack a Saveable owned by a sub-scene")
 	_assert(fresh.owner == root2, "made a fresh Saveable the scene root owns")
 
+	_quick_keys_checks(dock)
+
 	root2.queue_free()
 	root.queue_free()
 	print("--- %d passed, %d failed ---" % [_passes, _failures])
@@ -98,3 +101,75 @@ func _assert(cond: bool, msg: String) -> void:
 	else:
 		_failures += 1
 		printerr("FAIL: " + msg)
+
+
+func _count_keys(root: Node) -> int:
+	var n := 0
+	for c in root.find_children("*", "", true, false):
+		if c.get_script() == KEYS_SCRIPT:
+			n += 1
+	return n
+
+
+# "Quick save and load keys": one SaveKeys on the root, re-entrant, and the
+# "Save this node's state" status points at it instead of at code.
+func _quick_keys_checks(dock) -> void:
+	var level := Node2D.new()
+	level.name = "Level"
+	var hero := CharacterBody2D.new()
+	hero.name = "Player"
+	level.add_child(hero); hero.owner = level
+
+	var sv = dock.wire_saveable(level, hero)
+	var props: PackedStringArray = sv.get("save_properties")
+	_assert("position" in props, "a 2D body's position is prefilled, so a script-less player still saves")
+	var st: String = dock.save_node_status(level, hero, props)
+	_assert(not st.contains("SaveLite") and not st.contains("()"), "save status never sends the buyer to code (%s)" % st)
+	_assert(st.contains("Add \"Quick save and load keys\" so the player can save (F5) and load (F9)."), "no keys yet: save status says to add them")
+
+	var k1 = dock.wire_keys(level, false)
+	_assert(k1 != null and k1.get_script() == KEYS_SCRIPT, "wire_keys added a SaveKeysLite")
+	_assert(k1.get_parent() == level, "SaveKeys sits on the scene root")
+	_assert(k1.owner == level, "SaveKeys owned by the root: bakes into the .tscn")
+	_assert(String(k1.name) == "SaveKeys", "named SaveKeys (got %s)" % k1.name)
+	_assert(k1.get("load_on_start") == false, "checkbox off: load_on_start stays off")
+	_assert(dock.find_keys(level) == k1, "find_keys finds it")
+	_assert(dock.keys_status(level, k1, true) == "Added quick save: F5 saves, F9 loads.", "status: %s" % dock.keys_status(level, k1, true))
+	_assert(dock.save_node_status(level, hero, props).ends_with(" F5 saves it and F9 loads it."), "with keys: save status says F5 saves it and F9 loads it")
+
+	# the buyer picks another save key in the Inspector, then ticks the box and re-Applies
+	k1.set("save_key", KEY_F6)
+	var k2 = dock.wire_keys(level, true)
+	_assert(k2 == k1, "second Apply reuses the same SaveKeys")
+	_assert(_count_keys(level) == 1, "exactly one SaveKeys after two Applies (got %d)" % _count_keys(level))
+	_assert(k2.get("load_on_start") == true, "second Apply takes the ticked checkbox")
+	_assert(k2.get("save_key") == KEY_F6, "second Apply keeps the key the buyer picked")
+	_assert(dock.keys_status(level, k2, false) == "Updated quick save: F6 saves, F9 loads. It loads the save when the scene starts.", "status: %s" % dock.keys_status(level, k2, false))
+
+	# what gets saved with the scene
+	var ps := PackedScene.new()
+	ps.pack(level)
+	var copy := ps.instantiate()
+	var saved_keys := copy.get_node_or_null("SaveKeys")
+	_assert(saved_keys != null and saved_keys.get("load_on_start") == true and saved_keys.get("save_key") == KEY_F6, "the ticked box and the picked key are saved with the scene")
+	copy.free()
+
+	# a node of the buyer's already called SaveKeys: ours gets a readable name, not @Node@123
+	var other := Node2D.new()
+	other.name = "Other"
+	var mine := Node.new()
+	mine.name = "SaveKeys"
+	other.add_child(mine); mine.owner = other
+	var k3 = dock.wire_keys(other, false)
+	_assert(k3 != mine and not String(k3.name).contains("@"), "a name clash still gives a readable name (got %s)" % k3.name)
+	_assert(dock.keys_status(other, k3, true).ends_with("Nothing in this scene is saveable yet: select a node and use \"Save this node's state\"."), "keys status says when nothing is saveable yet")
+	other.free()
+
+	# one inside an instanced sub-scene isn't reused, but still counts for the status
+	var host := Node2D.new()
+	var sub := Node2D.new()
+	host.add_child(sub); sub.owner = host
+	var inner = dock.wire_keys(sub, false)  # owned by the sub-scene, not host
+	_assert(dock.find_keys(host) == null and dock.find_keys(host, false) == inner, "a sub-scene's SaveKeys isn't hijacked but is seen")
+	host.free()
+	level.free()

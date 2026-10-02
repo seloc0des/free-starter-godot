@@ -14,7 +14,7 @@ const RESOURCE_SCRIPT := preload("res://addons/inventory_lite/item_resource.gd")
 const DEFAULT_DIR := "res://items"
 const DOCK_NAME := "Items (Lite)"
 const NEW_BASENAME := "new_item"
-const UPGRADE_LABEL := "Pro adds the full item database + one-click scene wiring + the EventTrigger node."
+const UPGRADE_LABEL := "Pro adds the full item database (weight, rarity) + a styled bag with icons and drag and drop + the EventTrigger node."
 const UPGRADE_URL := "https://selodev.itch.io/godot-inventory-system"
 # =============================================================
 
@@ -39,14 +39,25 @@ var _icon_setter := Callable()
 
 func _ready() -> void:
 	name = DOCK_NAME
-	custom_minimum_size = Vector2(320, 420)
+	custom_minimum_size = Vector2(0, 420)
 	_build_ui()
 	_refresh_list()
+	if Engine.is_editor_hint():
+		EditorInterface.get_inspector().property_edited.connect(_on_inspector_edit)
+
+
+# As wide as what's in it and no wider. The old fixed width pushed a laptop's
+# default dock (270 px) wider whenever this tab was open.
+func _get_minimum_size() -> Vector2:
+	if get_child_count() == 0 or not (get_child(0) is Control):
+		return Vector2.ZERO
+	return Vector2((get_child(0) as Control).get_combined_minimum_size().x, 0.0)
 
 
 func _build_ui() -> void:
 	var root := VBoxContainer.new()
 	root.set_anchors_preset(Control.PRESET_FULL_RECT)
+	root.minimum_size_changed.connect(update_minimum_size)
 	add_child(root)
 	var _setup_hint := Label.new()
 	_setup_hint.text = "Editing data here. To add this to your scene, use the ‘Inventory · Setup’ tab (no code)."
@@ -59,12 +70,15 @@ func _build_ui() -> void:
 	_dir_label = Label.new()
 	_dir_label.text = _dir
 	_dir_label.size_flags_horizontal = Control.SIZE_EXPAND_FILL
+	_dir_label.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # a long folder path wraps
 	header.add_child(_dir_label)
 	header.add_child(_button("Folder…", _on_choose_folder))
 
-	var split := HSplitContainer.new()
+	# The list sits above the form. Side by side, the form only got what the list
+	# left of a default dock, too narrow for its fields without a sideways scroll.
+	var split := VSplitContainer.new()
 	split.size_flags_vertical = Control.SIZE_EXPAND_FILL
-	split.split_offset = 120
+	split.split_offset = 160
 	root.add_child(split)
 
 	var left := VBoxContainer.new()
@@ -72,6 +86,7 @@ func _build_ui() -> void:
 	split.add_child(left)
 	_list = ItemList.new()
 	_list.size_flags_vertical = Control.SIZE_EXPAND_FILL
+	_list.theme_changed.connect(_hold_five_rows.bind(_list), CONNECT_DEFERRED)  # after the theme cache refreshes
 	_list.item_selected.connect(_on_selected)
 	left.add_child(_list)
 	var lb := HBoxContainer.new()
@@ -81,6 +96,7 @@ func _build_ui() -> void:
 	lb.add_child(_button("Del", _on_delete))
 
 	var scroll := ScrollContainer.new()
+	scroll.horizontal_scroll_mode = ScrollContainer.SCROLL_MODE_DISABLED
 	scroll.size_flags_horizontal = Control.SIZE_EXPAND_FILL
 	split.add_child(scroll)
 	_fields = VBoxContainer.new()
@@ -90,6 +106,7 @@ func _build_ui() -> void:
 	root.add_child(HSeparator.new())
 	root.add_child(_button("Save", _on_save))
 	_status = Label.new()
+	_status.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART  # long status lines ran off the dock's edge
 	root.add_child(_status)
 
 	# Upgrade footer — the Lite dock's whole reason for being polished.
@@ -102,6 +119,15 @@ func _build_ui() -> void:
 	root.add_child(_button("Upgrade to Pro →", func(): OS.shell_open(UPGRADE_URL)))
 	# EditorFileDialog is created lazily in _open_dialog — it's an editor-only
 	# class, so constructing it here would break any non-editor instantiation.
+
+
+# About five rows of the list, from its own font, so it holds at any editor scale.
+# It used to get whatever a fixed 160 px top pane left over, which at 125% was a
+# few rows at best, and nothing at all where the header rows share that pane.
+func _hold_five_rows(list: ItemList) -> void:
+	var font := list.get_theme_font("font")
+	var row := font.get_height(list.get_theme_font_size("font_size")) + list.get_theme_constant("v_separation")
+	list.custom_minimum_size.y = 5 * row
 
 
 func _button(text: String, cb: Callable) -> Button:
@@ -123,10 +149,24 @@ func _refresh_list() -> void:
 	_paths = _scan(_dir)
 	_list.clear()
 	for p in _paths:
-		_list.add_item(p.get_file().get_basename())
+		_list.add_item(_list_label(p))
 	for i in _paths.size():
 		if _paths[i] == _current_path:
 			_list.select(i)
+
+
+# The name typed into the form ("Iron Sword"), not the file it lives in (iron_sword).
+# A blank name, or a file that won't load, falls back to the file name.
+func _list_label(path: String) -> String:
+	var stem := path.get_file().get_basename()
+	var res: Resource = load(path)
+	if res == null:
+		return stem
+	for field in ["name", "title"]:
+		var v: Variant = res.get(field)
+		if v is String and String(v).strip_edges() != "":
+			return String(v).strip_edges()
+	return stem
 
 
 func _scan(dir_path: String) -> PackedStringArray:
@@ -159,15 +199,19 @@ func _on_selected(idx: int) -> void:
 
 func _build_fields() -> void:
 	for c in _fields.get_children():
+		_fields.remove_child(c)  # out now, so a rebuild never shows two copies
 		c.queue_free()
 	if _current == null:
 		return
 	_loading = true
-	for p in _current.get_property_list():
+	# the script's own list: in the editor the resource is a placeholder, and its
+	# property list has no script-variable flag, so filtering on that showed nothing
+	var scr: Script = RESOURCE_SCRIPT  # typed, or the class constant reads as a static call
+	for p in scr.get_script_property_list():
 		var usage: int = p["usage"]
-		if not (usage & PROPERTY_USAGE_SCRIPT_VARIABLE):
-			continue
 		if not (usage & PROPERTY_USAGE_EDITOR):
+			continue
+		if usage & (PROPERTY_USAGE_CATEGORY | PROPERTY_USAGE_GROUP | PROPERTY_USAGE_SUBGROUP):
 			continue
 		_build_field(p)
 	_loading = false
@@ -279,11 +323,20 @@ func _on_new() -> void:
 		DirAccess.make_dir_recursive_absolute(_dir)
 	var path := _unique_path(NEW_BASENAME)
 	var res: Resource = RESOURCE_SCRIPT.new()
+	# a name and an id to start from, the same as the Setup tab's New item
+	var stem := path.get_file().get_basename()
+	if "id" in res:
+		res.set("id", stem)
+	if "name" in res:
+		res.set("name", stem.capitalize())
 	var err := ResourceSaver.save(res, path)
 	if err != OK:
 		_set_status("Could not create (err %d)" % err, ERR_COLOR)
 		return
 	_after_write(path)
+	if Engine.is_editor_hint():
+		EditorInterface.edit_resource(load(path))
+	_set_status("Made %s. Name it and pick an icon here or in the Inspector." % path, OK_COLOR)
 
 
 func _on_duplicate() -> void:
@@ -319,12 +372,31 @@ func _on_save() -> void:
 	if err != OK:
 		_set_status("Save failed (err %d)" % err, ERR_COLOR)
 		return
-	_current.take_over_path(_current_path)
+	_sync_cached(_current, _current_path)
 	_current = _current.duplicate(false)
+	_refresh_list()     # the list shows names, and this one may have just changed
 	_set_status("Saved.", OK_COLOR)
 
 
+# The file is saved; now make the copy everyone else already holds (scene nodes, the
+# Inspector) match it. take_over_path handed the path to the working copy instead,
+# which left those holders with an orphaned old copy their scene then saved embedded.
+func _sync_cached(saved: Resource, path: String) -> void:
+	if not ResourceLoader.has_cached(path):
+		saved.take_over_path(path)  # nobody holds it yet, so taking over is safe
+		return
+	var cached: Resource = ResourceLoader.load(path)
+	if cached == saved:
+		return
+	for p in saved.get_property_list():
+		var n: String = p.name
+		if (int(p.usage) & PROPERTY_USAGE_STORAGE) and n != "script" and n != "resource_path":
+			cached.set(n, saved.get(n))
+	cached.emit_changed()
+
+
 func _after_write(path: String) -> void:
+	_register_uid(path)
 	_rescan_fs()
 	_current_path = path
 	_refresh_list()
@@ -334,12 +406,14 @@ func _after_write(path: String) -> void:
 			return
 
 
+# base.tres, then base_2.tres, base_3.tres: the Setup tab's New item counts the
+# same way, so the two carry on from each other in res://items.
 func _unique_path(base: String) -> String:
 	var candidate := _dir.path_join(base + ".tres")
 	var n := 1
 	while FileAccess.file_exists(candidate):
-		candidate = _dir.path_join("%s_%d.tres" % [base, n])
 		n += 1
+		candidate = _dir.path_join("%s_%d.tres" % [base, n])
 	return candidate
 
 
@@ -392,8 +466,29 @@ func _on_file_selected(path: String) -> void:
 		_icon_setter = Callable()
 
 
+# The Inspector edits the file's own copy. Keep the working copy in step, or the
+# next Save here would put back whatever the Inspector just changed.
+func _on_inspector_edit(prop: String) -> void:
+	if _current == null or _current_path == "":
+		return
+	var obj := EditorInterface.get_inspector().get_edited_object()
+	if not (obj is Resource) or (obj as Resource).resource_path != _current_path:
+		return
+	_current.set(prop, obj.get(prop))
+	_build_fields()
+
+
 func _rescan_fs() -> void:
 	if Engine.is_editor_hint():
 		var fs := EditorInterface.get_resource_filesystem()
 		if fs:
 			fs.scan()
+
+
+# A file written into a folder made this session isn't in the editor's file list
+# yet, so its UID stayed unknown and the first Play of a scene using it warned
+# "invalid UID" (a yellow Debugger badge). Register it the moment it's written.
+static func _register_uid(path: String) -> void:
+	var uid := ResourceLoader.get_resource_uid(path)
+	if uid != ResourceUID.INVALID_ID and not ResourceUID.has_id(uid):
+		ResourceUID.add_id(uid, path)

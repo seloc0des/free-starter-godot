@@ -39,6 +39,9 @@ func change_scene(path: String, spawn: StringName = &"", fade := true) -> void:
 	_changing = false
 
 
+var _placed_msec := -100000
+
+
 func place_player(spawn: StringName = &"") -> void:
 	var sp := _find_spawn(spawn)
 	if sp == null:
@@ -46,6 +49,14 @@ func place_player(spawn: StringName = &"") -> void:
 	for p in get_tree().get_nodes_in_group("player"):
 		if p is Node2D:
 			p.global_position = sp.global_position
+	_placed_msec = Time.get_ticks_msec()
+
+
+## True for a moment after place_player put the player somewhere. A door under that spot
+## (the way back, sitting on the landing spot) waits for them to step off and back on
+## instead of sending them straight back to where they came from.
+func just_placed(window_msec := 400) -> bool:
+	return Time.get_ticks_msec() - _placed_msec < window_msec
 
 
 func current_path() -> String:

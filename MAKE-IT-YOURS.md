@@ -2,8 +2,8 @@
 
 You don't need to code. Here's how to turn this starter into your game.
 
-Work down the **Start Here** panel on the right if you'd rather be walked through
-it. This file is the same route in longer form.
+Work down the **Start Here** panel at the bottom of the editor if you'd rather be
+walked through it. This file is the same route in longer form.
 
 ## 1. Change the story, in `content/dialogue.json`
 
@@ -66,7 +66,7 @@ Some starting points:
 Each Lite system is the free cut of a paid one. The full versions share the same
 event bus and drop into the same folder, so adding one doesn't mean rebuilding
 what you have. All of them ship together as **SELODEV Complete** on
-https://selodev.itch.io: one purchase, every system plus the Game Kit that wires
+https://selodev.com/go/complete: one purchase, every system plus the Game Kit that wires
 them, and your game goes to the next level in place.
 
 ## 6. Publish it

@@ -84,6 +84,7 @@ script = ExtResource("14")
 
 [node name="Health" type="Node" parent="Goblin1"]
 script = ExtResource("15")
+flash_on_hit = false
 max_health = 50.0
 
 [node name="Hurt" type="Area2D" parent="Goblin1"]
@@ -121,6 +122,7 @@ script = ExtResource("14")
 
 [node name="Health" type="Node" parent="Goblin2"]
 script = ExtResource("15")
+flash_on_hit = false
 max_health = 50.0
 
 [node name="Hurt" type="Area2D" parent="Goblin2"]
@@ -158,6 +160,7 @@ script = ExtResource("14")
 
 [node name="Health" type="Node" parent="Goblin3"]
 script = ExtResource("15")
+flash_on_hit = false
 max_health = 50.0
 
 [node name="Hurt" type="Area2D" parent="Goblin3"]
@@ -196,6 +199,7 @@ chase_speed = 110.0
 
 [node name="Health" type="Node" parent="Skeleton1"]
 script = ExtResource("15")
+flash_on_hit = false
 max_health = 75.0
 
 [node name="Hurt" type="Area2D" parent="Skeleton1"]
@@ -234,6 +238,7 @@ chase_speed = 110.0
 
 [node name="Health" type="Node" parent="Skeleton2"]
 script = ExtResource("15")
+flash_on_hit = false
 max_health = 75.0
 
 [node name="Hurt" type="Area2D" parent="Skeleton2"]
@@ -271,6 +276,7 @@ save_id = "dungeon_player"
 
 [node name="Health" type="Node" parent="Player"]
 script = ExtResource("15")
+flash_on_hit = false
 
 [node name="Stats" type="Node" parent="Player"]
 script = ExtResource("18")
