@@ -20,6 +20,8 @@ var _rows: VBoxContainer
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
+	# A third-person camera gives the mouse back while a panel in this group is showing.
+	add_to_group(&"needs_mouse")
 	# one added by hand has no size yet: give it the stats spot, left, under the HUD
 	if _unplaced():
 		set_anchors_preset(Control.PRESET_TOP_LEFT)

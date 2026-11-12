@@ -3,6 +3,34 @@
 The four starter kits (Free, Dungeon, Survival, RPG) are one project built four
 ways, so they share a version. Each entry below says which kits it reaches.
 
+## 1.4.0 (2026-10-24)
+
+Reaches all four kits.
+
+- **Combat, Controller, Enemy AI and Scene Flow (Lite) work in 3D games too.** Combat (Lite) 1.4.0,
+  Controller (Lite) 1.3.0, Enemy AI (Lite) 1.2.0 and Scene Flow (Lite) 1.2.0 each gained 3D versions
+  of their nodes: hitboxes and hurtboxes, a top-down 3D player with a follow camera, a 3D enemy
+  brain, and 3D doors and spawn points. Open a 3D scene and their Setup tabs build the 3D ones. The
+  kits' own games are 2D and play exactly as before.
+- **Enemy AI (Lite) 1.2.0: a dead enemy stops fighting, and a chaser lets go when its target is
+  gone.** An enemy whose body stays after it dies no longer keeps swinging, and an enemy whose
+  target is removed from the game walks back home instead of running on or standing frozen.
+- **Inventory (Lite) 1.4.5, Equipment (Lite) 1.4.4, Crafting (Lite) 1.4.4, Vendor (Lite) 1.3.4 and
+  Stats & Skills (Lite) 1.4.4: their panels free the mouse in a third-person game.** If you build
+  a 3D game with the orbit camera from Controller (Pro) 1.6.0, which holds the mouse for looking
+  around, it now lets go of the mouse while the bag, the equipped list, the crafting panel, the shop
+  or the stats list is open, so you can use the panel. The kits' own games are 2D and don't change.
+
+## 1.3.9 (2026-10-12)
+
+Reaches all four kits.
+
+- **The Lite tabs show their names on Godot 4.5.** Beside the Inspector, the Setup and Lite tabs of
+  all 14 Lite packs in the kit (Audio, Combat, Controller, Crafting, Dialogue, Enemy AI, Equipment,
+  Inventory, Loot, Quests, Save & Load, Scene Flow, Stats and Vendor) were blank on 4.5, so "open
+  the Quests · Setup tab" pointed at nothing. Godot 4.7 was not affected. Each Lite bumped a patch
+  version for it.
+
 ## 1.3.8 (2026-10-02)
 
 Reaches all four kits.

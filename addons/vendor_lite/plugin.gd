@@ -11,6 +11,9 @@ var _chooser: Control
 
 func _enter_tree() -> void:
 	_chooser = CHOOSER_SCRIPT.new()
+	# Named here, not only in the dock's _ready: Godot 4.5 reads the tab title
+	# the moment the dock is added, before _ready has run.
+	_chooser.name = "Vendor · Setup"
 	add_control_to_dock(DOCK_SLOT_RIGHT_UL, _chooser)
 
 

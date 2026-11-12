@@ -175,6 +175,9 @@ static func run(host: Node) -> Dictionary:
 	var rt: Dictionary = await run_remove_tick(host)
 	lines.append_array(rt["lines"])
 	ok = ok and rt["ok"]
+	var r3: Dictionary = await run_3d(host)
+	lines.append_array(r3["lines"])
+	ok = ok and r3["ok"]
 	return {"ok": ok, "lines": lines}
 
 
@@ -265,6 +268,151 @@ static func run_remove_tick(host: Node) -> Dictionary:
 			n.free()
 	td.free()
 	return {"ok": ok, "lines": lines}
+
+
+# The 3D builds: what the dock bakes in a 3D scene, played out with real overlap.
+# bake_hurtable / bake_hitbox are the buttons minus the editor, with `as_3d` on.
+static func run_3d(host: Node) -> Dictionary:
+	var lines: Array[String] = []
+	var ok := true
+	var tree := host.get_tree()
+	var td = DOCK.new()
+	host.add_child(td)
+
+	var r3d := Node3D.new()
+	var r2d := Node2D.new()
+	var rctl := Control.new()
+	var rplain := Node.new()
+	var kid3d := Node3D.new()
+	var kid2d := Node2D.new()
+	ok = _chk(lines, td.is_3d_build(r3d, kid2d) and not td.is_3d_build(r2d, kid3d) and not td.is_3d_build(rctl, kid2d) and not td.is_3d_build(null, kid2d),
+		"3D dock: a Node3D root means 3D, a Node2D root means 2D even with a Node3D child, and 2D, Control and no scene keep 2D") and ok
+	ok = _chk(lines, td.is_3d_build(rplain, kid3d) and not td.is_3d_build(rplain, kid2d) and not td.is_3d_build(rplain, rplain),
+		"3D dock: under a plain Node root, a Node3D target means 3D and anything else keeps 2D") and ok
+	for n in [r3d, r2d, rctl, rplain, kid3d, kid2d]:
+		n.free()
+
+	var foe := CharacterBody3D.new()
+	foe.name = "Ogre"
+	foe.position = Vector3(30000, 0, 0)
+	var foe_shape := CollisionShape3D.new()
+	foe_shape.shape = CapsuleShape3D.new()
+	foe_shape.position = Vector3(0, 1.0, 0)
+	foe.add_child(foe_shape)
+	host.add_child(foe)
+	var said: String = td.bake_hurtable(foe, true)
+	var hb: Node = foe.get_node_or_null("HurtboxLite3D")
+	ok = _chk(lines, _healths(foe).size() == 1 and hb is HurtboxLite3D and hb.get_child_count() == 1 and hb.get_child(0) is CollisionShape3D
+		and int(hb.team) == DOCK.TEAM_ENEMY and foe.get_node_or_null("HurtboxLite") == null,
+		"3D dock: Add Health + Hurtbox bakes HealthLite and a HurtboxLite3D with a 3D shape, no 2D node [%s]" % said) and ok
+	ok = _chk(lines, is_equal_approx((hb.get_child(0) as Node3D).position.y, 1.0), "3D dock: the hurtbox shape sits where the body's own shape does") and ok
+	td.bake_hurtable(foe, true)
+	ok = _chk(lines, _healths(foe).size() == 1, "3D dock: clicking again retunes, no second Health") and ok
+
+	var flat := Node2D.new()
+	host.add_child(flat)
+	td.bake_hurtable(flat)
+	ok = _chk(lines, flat.get_node_or_null("HurtboxLite") is HurtboxLite and flat.get_node_or_null("HurtboxLite3D") == null,
+		"3D dock: a 2D bake still makes the 2D hurtbox") and ok
+
+	var s3 := 1.0 / 32.0
+	var why: String = td._reach_why(-1.0, -1.0, 0.0, s3)
+	ok = _chk(lines, why.contains("1.5 m hitbox") and why.contains("0.9 m hurtbox") and is_equal_approx(td.reach_for(-1.0, -1.0, 0.0, s3), 0.9),
+		"3D dock: with no boxes to measure, the words and the numbers both use the 1.5 m hitbox and 0.9 m hurtbox it builds (%s, %.2f)" % [why, td.reach_for(-1.0, -1.0, 0.0, s3)]) and ok
+
+	var sword := Node3D.new()
+	sword.position = Vector3(30500, 0, 0)
+	host.add_child(sword)
+	var root := Node3D.new()
+	host.add_child(root)
+	said = td.bake_hitbox(sword, root, true)
+	var hit: Node = sword.get_node_or_null("HitboxLite3D")
+	ok = _chk(lines, hit is HitboxLite3D and int(hit.team) == DOCK.TEAM_PLAYER and hit.get_child(0) is CollisionShape3D and sword.get_node_or_null("HitboxLite") == null,
+		"3D dock: Add Hitbox bakes a HitboxLite3D on the player side with a 3D shape [%s]" % said) and ok
+	td.bake_hitbox(sword, root, true)
+	var boxes := 0
+	for c in sword.get_children():
+		if c is HitboxLite3D:
+			boxes += 1
+	ok = _chk(lines, boxes == 1, "3D dock: clicking Add Hitbox again retunes the same one") and ok
+	var hp: Node = _healths(foe)[0]
+	for i in 3:
+		await tree.physics_frame
+	ok = _chk(lines, is_equal_approx(float(hp.current), float(hp.max_health)), "3D dock, played: no damage while apart") and ok
+	sword.global_position = foe.global_position
+	for i in 20:
+		await tree.physics_frame
+		if hp.current < hp.max_health:
+			break
+	ok = _chk(lines, is_equal_approx(float(hp.current), float(hp.max_health) - float(td._dmg.value)),
+		"3D dock, played: the baked hitbox hurts the baked hurtbox on overlap, no field touched (%.0f -> %.0f)" % [hp.max_health, hp.current]) and ok
+
+	var reach := _reach_rig_3d(host, Vector3(31000, 0, 0))
+	said = td.fit_enemy_reach(reach["enemy"], reach["hit"], reach["root"])
+	var r: float = reach["brain"].attack_radius
+	# hitbox 1.5 m box (half 0.75) + player hurtbox 0.9 m box (half 0.45) = 1.2 m reach; 3/4 = 0.9
+	ok = _chk(lines, is_equal_approx(r, 0.9) and said.contains("attack radius to 0.9 ") and not said.contains("px"),
+		"3D dock: a 3D hitbox on a brain enemy sets its attack radius in metres, and the status has no pixels (%.3f) [%s]" % [r, said]) and ok
+	(reach["enemy"] as Node3D).position = Vector3(r, 0, 0)
+	for i in 10:
+		await tree.physics_frame
+	ok = _chk(lines, float(reach["hp"].current) < float(reach["hp"].max_health),
+		"3D dock, played: at the fitted radius the enemy's hitbox hurts the player (%.0f)" % reach["hp"].current) and ok
+	var far_rig := _reach_rig_3d(host, Vector3(31500, 0, 0))
+	td.fit_enemy_reach(far_rig["enemy"], far_rig["hit"], far_rig["root"])
+	(far_rig["enemy"] as Node3D).position = Vector3(1.6, 0, 0)    # a brain left at a 1.6 m stop never reaches
+	for i in 10:
+		await tree.physics_frame
+	ok = _chk(lines, is_equal_approx(float(far_rig["hp"].current), float(far_rig["hp"].max_health)),
+		"3D dock, played, control: past the fitted radius it never touches the player") and ok
+	var wide := _reach_rig_3d(host, Vector3(32000, 0, 0), 1.6)
+	said = td.fit_enemy_reach(wide["enemy"], wide["hit"], wide["root"])
+	ok = _chk(lines, said.contains("they touch at 1.2 m") and said.contains("Make the hitbox bigger") and not said.contains("px"),
+		"3D dock: bodies touching past the boxes' reach get the 'make the hitbox bigger' note in metres [%s]" % said) and ok
+
+	for n in [foe, flat, sword, root, reach["root"], far_rig["root"], wide["root"]]:
+		if is_instance_valid(n):
+			n.free()
+	td.free()
+	return {"ok": ok, "lines": lines}
+
+
+# A player (HealthLite, a 0.9 m hurtbox, a body_w wide body) in the "player" group, and
+# an enemy 3.1 m away with a body, a 1.5 m enemy side hitbox and a stand-in brain.
+static func _reach_rig_3d(host: Node, at: Vector3, body_w := 0.8) -> Dictionary:
+	var root := Node3D.new()
+	root.position = at
+	host.add_child(root)
+	var player := CharacterBody3D.new()
+	player.add_to_group("player")
+	player.add_child(_shape3(Vector3(body_w, 1.8, body_w)))
+	var hp := HealthLite.new()
+	player.add_child(hp)
+	var hurt := HurtboxLite3D.new()
+	hurt.team = DOCK.TEAM_PLAYER
+	hurt.add_child(_shape3(Vector3(0.9, 0.9, 0.9)))
+	player.add_child(hurt)
+	root.add_child(player)
+	var enemy := CharacterBody3D.new()
+	enemy.position = Vector3(3.1, 0, 0)
+	enemy.add_child(_shape3(Vector3(0.8, 1.8, 0.8)))
+	var hit := HitboxLite3D.new()
+	hit.name = "HitboxLite3D"
+	hit.team = DOCK.TEAM_ENEMY
+	hit.add_child(_shape3(Vector3(1.5, 1.5, 1.5)))
+	enemy.add_child(hit)
+	var brain: Node = BRAIN_LITE.new()
+	enemy.add_child(brain)
+	root.add_child(enemy)
+	return {"root": root, "enemy": enemy, "hit": hit, "hp": hp, "brain": brain}
+
+
+static func _shape3(size: Vector3) -> CollisionShape3D:
+	var box := BoxShape3D.new()
+	box.size = size
+	var cs := CollisionShape3D.new()
+	cs.shape = box
+	return cs
 
 
 static func _spot(host: Node, n: Node2D, n_name: String, at: Vector2) -> Node2D:

@@ -3,10 +3,13 @@ extends Control
 
 # No-code chooser dock (Lite). Select a node, one click drops a touch-travel
 # Door (with shape and target) or a Spawn Point. Pro adds checkpoints, flags,
-# press-E doors, and key-gating.
+# press-E doors, and key-gating. When the open scene's root is a Node3D the same
+# buttons build the 3D versions (Area3D, Marker3D, metres).
 
 const DOOR: Script = preload("res://addons/scene_flow_lite/door_lite.gd")
 const SPAWN: Script = preload("res://addons/scene_flow_lite/spawn_point_lite.gd")
+const DOOR_3D: Script = preload("res://addons/scene_flow_lite/door_lite_3d.gd")
+const SPAWN_3D: Script = preload("res://addons/scene_flow_lite/spawn_point_lite_3d.gd")
 const NO_PLAYER := "Nothing in this scene is marked as the player yet, so this won't react to anything. Select your player node and press \"Make the selected node the player\"."
 
 var _scene_path: LineEdit
@@ -110,12 +113,16 @@ func _add_door() -> void:
 		return
 	var path := _scene_path.text.strip_edges()
 	var spawn := _spawn_id.text.strip_edges()
-	var door := _inert(Area2D.new(), DOOR) as Area2D
-	door.name = "Door"
-	door.set("target_scene", path)
-	door.set("target_spawn", StringName(spawn))
-	_own(target, door)
-	_add_shape(door, Vector2(32, 48))
+	if use_3d(EditorInterface.get_edited_scene_root(), target):
+		build_door_3d(target, EditorInterface.get_edited_scene_root(), path, spawn)
+		EditorInterface.mark_scene_as_unsaved()
+	else:
+		var door := _inert(Area2D.new(), DOOR) as Area2D
+		door.name = "Door"
+		door.set("target_scene", path)
+		door.set("target_spawn", StringName(spawn))
+		_own(target, door)
+		_add_shape(door, Vector2(32, 48))
 	if path == "":
 		_say("Added a Door under '%s'. Set its target_scene in the Inspector.%s" % [target.name, _player_note()])
 	else:
@@ -127,13 +134,62 @@ func _add_spawn() -> void:
 	if target == null:
 		_say("Select a node in the open scene first.")
 		return
-	var sp := _inert(Marker2D.new(), SPAWN) as Marker2D
 	var id := _spawn_id.text.strip_edges()
+	if use_3d(EditorInterface.get_edited_scene_root(), target):
+		build_spawn_3d(target, EditorInterface.get_edited_scene_root(), id)
+		EditorInterface.mark_scene_as_unsaved()
+	else:
+		var sp := _inert(Marker2D.new(), SPAWN) as Marker2D
+		sp.name = "SpawnPoint" if id == "" else "Spawn_" + id
+		if id != "":
+			sp.set("id", StringName(id))
+		_own(target, sp)
+	_say("Added spawn point '%s'. Doors land here.%s" % [id if id != "" else "default", _player_note()])
+
+
+# ---- 3D builds -----------------------------------------------------------
+# Whether a build goes 3D. A Node3D scene root says 3D and a Node2D root says 2D.
+# A root that is neither (a plain Node) follows the node the build attaches to: a
+# Node3D target means 3D, anything else keeps the 2D builds.
+func use_3d(root: Node, target: Node) -> bool:
+	if root is Node3D:
+		return true
+	if root is Node2D:
+		return false
+	return target is Node3D
+
+
+# Called by the buttons in a 3D scene, and by the checks without the editor.
+# `root` owns what they add so it saves with the scene. Each returns the node it made.
+
+func build_door_3d(parent: Node, root: Node, path: String, spawn: String) -> Area3D:
+	var door := _inert(Area3D.new(), DOOR_3D) as Area3D
+	door.name = "Door"
+	door.set("target_scene", path)
+	door.set("target_spawn", StringName(spawn))
+	_adopt(parent, door, root)
+	var shape := CollisionShape3D.new()
+	shape.name = "Shape"
+	var box := BoxShape3D.new()
+	box.size = Vector3(1.5, 2.2, 1.0)    # metres
+	shape.shape = box
+	shape.position.y = box.size.y * 0.5    # box stands on the node's origin (floor level)
+	_adopt(door, shape, root)
+	return door
+
+
+func build_spawn_3d(parent: Node, root: Node, id: String) -> Marker3D:
+	var sp := _inert(Marker3D.new(), SPAWN_3D) as Marker3D
 	sp.name = "SpawnPoint" if id == "" else "Spawn_" + id
 	if id != "":
 		sp.set("id", StringName(id))
-	_own(target, sp)
-	_say("Added spawn point '%s'. Doors land here.%s" % [id if id != "" else "default", _player_note()])
+	_adopt(parent, sp, root)
+	return sp
+
+
+func _adopt(parent: Node, child: Node, root: Node) -> void:
+	parent.add_child(child, true)
+	child.owner = root
 
 
 # ---- door target ---------------------------------------------------------
@@ -208,7 +264,8 @@ func _spawn_ids_in(path: String) -> PackedStringArray:
 	var nodes: Array[Node] = [inst]
 	nodes.append_array(inst.find_children("*", "", true, false))
 	for n in nodes:
-		if n.get_script() == SPAWN:
+		var scr: Variant = n.get_script()
+		if scr == SPAWN or scr == SPAWN_3D:
 			var raw: Variant = n.get("id")
 			var id := String(raw) if raw != null else ""
 			if id != "" and not ids.has(id):

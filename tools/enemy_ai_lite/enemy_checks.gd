@@ -4,6 +4,9 @@ extends RefCounted
 # acceptance banner. Sections use distinct target groups so brains never see
 # another section's stand-in player. Everything explicitly typed.
 
+const ALIVE_HEALTH := preload("res://tools/enemy_ai_lite/fixtures/alive_health.gd")
+
+
 static func run(host: Node) -> Dictionary:
 	var lines: Array[String] = []
 	var ok := true
@@ -93,6 +96,81 @@ static func run_physics(host: Node) -> Dictionary:
 	player_b.queue_free()
 	body_b.queue_free()
 
+
+	# --- a target freed mid-chase or mid-attack is let go ---
+	for mode in ["chase", "attack"]:
+		var grp := StringName("free2_" + mode)
+		var gap := 100.0 if mode == "chase" else 10.0
+		var yy := 3000.0 if mode == "chase" else 3200.0
+		var victim := _stub_player(host, grp, Vector2(gap, yy))
+		var body_f := _enemy_body()
+		body_f.global_position = Vector2(0, yy)
+		host.add_child(body_f)
+		var brain_f := EnemyBrainLite.new()
+		brain_f.target_group = grp
+		body_f.add_child(brain_f)
+		var lost := {"n": 0}
+		brain_f.target_lost.connect(func() -> void: lost["n"] += 1)
+		await _ticks(tree, 4)
+		var engaged: bool = brain_f.state == EnemyBrainLite.CHASE if mode == "chase" else brain_f.state == EnemyBrainLite.ATTACK
+		victim.queue_free()
+		await _ticks(tree, 4)
+		ok = _chk(lines, engaged and lost["n"] == 1 and brain_f.target == null and brain_f.state != EnemyBrainLite.CHASE and brain_f.state != EnemyBrainLite.ATTACK,
+			"a target freed mid-%s fires target_lost and the brain lets go (state %s)" % [mode, brain_f.state]) and ok
+		body_f.queue_free()
+
+	# --- a corpse that stays in the scene stops fighting, and resumes on revive ---
+	var grp := &"dead2"
+	var yy := 3400.0
+	var mark := _stub_player(host, grp, Vector2(10, yy))
+	var body_k := _enemy_body()
+	body_k.global_position = Vector2(0, yy)
+	host.add_child(body_k)
+	var hp_k: Node = ALIVE_HEALTH.new()
+	body_k.add_child(hp_k)
+	var brain_k := EnemyBrainLite.new()
+	brain_k.target_group = grp
+	brain_k.attack_cooldown = 0.2
+	body_k.add_child(brain_k)
+	var swings := {"n": 0}
+	brain_k.attacked.connect(func(_t: Node2D) -> void: swings["n"] += 1)
+	await _ticks(tree, 6)
+	var fought: bool = brain_k.state == EnemyBrainLite.ATTACK and swings["n"] >= 1
+	hp_k.alive = false
+	await _ticks(tree, 4)
+	var frozen: int = swings["n"]
+	await _wait(tree, 0.8)
+	ok = _chk(lines, fought and brain_k.state == EnemyBrainLite.IDLE and brain_k.target == null and swings["n"] == frozen and body_k.velocity == Vector2.ZERO,
+		"a dead enemy that stays in the scene stops attacking and goes idle (%d swings, state %s)" % [swings["n"], brain_k.state]) and ok
+	hp_k.alive = true
+	await _wait(tree, 0.6)
+	ok = _chk(lines, brain_k.state == EnemyBrainLite.ATTACK and swings["n"] > frozen,
+		"when it revives it hunts and attacks again") and ok
+	mark.queue_free()
+	body_k.queue_free()
+
+
+	# --- a freed target with another one in range: it switches, it does not walk home ---
+	var two_a := _stub_player(host, &"two2", Vector2(60, 5000))
+	var two_b := _stub_player(host, &"two2", Vector2(80, 5000))
+	var body_t := _enemy_body()
+	body_t.global_position = Vector2(0, 5000)
+	host.add_child(body_t)
+	var brain_t := EnemyBrainLite.new()
+	brain_t.target_group = &"two2"
+	brain_t.give_up_radius = 1.0e9
+	body_t.add_child(brain_t)
+	var lost_t := {"n": 0}
+	brain_t.target_lost.connect(func() -> void: lost_t["n"] += 1)
+	await _ticks(tree, 4)
+	var first_ok: bool = brain_t.target == two_a
+	two_a.queue_free()
+	await _ticks(tree, 3)
+	ok = _chk(lines, first_ok and lost_t["n"] == 1 and brain_t.target == two_b and (brain_t.state == EnemyBrainLite.CHASE or brain_t.state == EnemyBrainLite.ATTACK),
+		"a target freed with another one in range: the brain switches to it instead of walking home (state %s)" % brain_t.state) and ok
+	two_b.queue_free()
+	body_t.queue_free()
+
 	return {"ok": ok, "lines": lines}
 
 
@@ -118,6 +196,13 @@ static func _stub_player(host: Node, group: StringName, pos: Vector2) -> Node2D:
 
 static func _frames(tree: SceneTree, n: int) -> void:
 	for i in n:
+		await tree.physics_frame
+
+
+# Like _frames, but the count is written for 60 physics ticks a second and scaled
+# to the project's rate. The checks added for 3D support use it.
+static func _ticks(tree: SceneTree, n: int) -> void:
+	for i in ceili(n * Engine.physics_ticks_per_second / 60.0):
 		await tree.physics_frame
 
 

@@ -7,6 +7,8 @@ extends Control
 const HEALTH := preload("res://addons/combat_lite/health_lite.gd")
 const HURTBOX := preload("res://addons/combat_lite/hurtbox_lite.gd")
 const HITBOX := preload("res://addons/combat_lite/hitbox_lite.gd")
+const HURTBOX_3D := preload("res://addons/combat_lite/hurtbox_lite_3d.gd")
+const HITBOX_3D := preload("res://addons/combat_lite/hitbox_lite_3d.gd")
 # The two sides, as the team numbers the demo and docs use. A hitbox only hurts
 # hurtboxes on the other team, so each button gets its own side pick, and the
 # defaults work untouched: an enemy you can hit, a weapon that hits it.
@@ -17,7 +19,12 @@ const TEAM_ENEMY := 1
 # hitbox overlapping the player's hurtbox with room to spare.
 const BOX_HALF := 16.0
 const REACH := 0.75
+# 3D works in metres: this dock's 32 px box is a 1 m box.
+const UNIT_3D := 1.0 / 32.0
+const HIT_HALF_3D := 0.75    # the 1.5 m hitbox box this dock builds
+const HURT_HALF_3D := 0.45   # the 0.9 m hurtbox box
 
+var _mode: Label
 var _hp: SpinBox
 var _hurt_side: OptionButton
 var _remove: CheckBox
@@ -36,6 +43,7 @@ func _ready() -> void:
 	if Engine.is_editor_hint():
 		EditorInterface.get_selection().selection_changed.connect(_on_selection_changed)
 		refresh_remove_tick(_selected())
+		_refresh_mode()
 
 
 # A plain Control doesn't tell the dock slot how narrow its page can go, so say it
@@ -60,6 +68,11 @@ func _build() -> void:
 	_scroll.add_child(v)
 
 	v.add_child(_header("Combat: bake onto the selected node"))
+	_mode = Label.new()
+	_mode.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_mode.text = "3D scene: these buttons build 3D nodes (Area3D, CollisionShape3D, sizes in metres)."
+	_mode.visible = false
+	v.add_child(_mode)
 	_hp = _num(1, 9999, 100)
 	v.add_child(_labeled("Max health", _hp))
 	_hurt_side = _side_pick([["Enemy side (the player can hurt it)", TEAM_ENEMY], ["Player side (enemies can hurt it)", TEAM_PLAYER]])
@@ -107,12 +120,13 @@ func _add_hurtable() -> void:
 	if target == null:
 		_say("Select a node in the open scene first.")
 		return
-	_say(bake_hurtable(target))
+	_say(bake_hurtable(target, is_3d_build(EditorInterface.get_edited_scene_root(), target)))
 
 
 # The button minus the selection, so the verify can press it headless. Returns
-# the status line.
-func bake_hurtable(target: Node) -> String:
+# the status line. `as_3d` is what the open scene being 3D switches on: 3D nodes
+# instead of 2D ones.
+func bake_hurtable(target: Node, as_3d: bool = false) -> String:
 	var team := _hurt_side.get_selected_id()
 	var side := "player side" if team == TEAM_PLAYER else "enemy side"
 	# Clicking twice used to stack a second Health + Hurtbox. Retune the ones that
@@ -121,7 +135,7 @@ func bake_hurtable(target: Node) -> String:
 	if h != null:
 		h.set("max_health", float(_hp.value))
 		var after := apply_remove_tick(target, h)
-		var existing := _find_child_named(target, "HurtboxLite")
+		var existing := _find_child_named(target, "HurtboxLite3D" if as_3d else "HurtboxLite")
 		if existing != null:
 			existing.set("team", team)
 		# no node added, so nothing else flags the scene for Play
@@ -132,6 +146,13 @@ func bake_hurtable(target: Node) -> String:
 	h.set("max_health", float(_hp.value))
 	var gone := apply_remove_tick(target, h)
 	_own(target, h)
+	if as_3d:
+		var hb3: Node = _inert(HURTBOX_3D)
+		hb3.name = "HurtboxLite3D"
+		hb3.set("team", team)
+		_own(target, hb3)
+		_add_shape_3d(hb3, Vector3(0.9, 1.8, 0.9), _body_center(target))
+		return "Added Health + Hurtbox (%s) to '%s'.%s" % [side, target.name, gone]
 	var hb: Node = _inert(HURTBOX)
 	hb.name = "HurtboxLite"
 	hb.set("team", team)
@@ -145,23 +166,36 @@ func _add_hitbox() -> void:
 	if target == null:
 		_say("Select a node in the open scene first.")
 		return
+	var root := EditorInterface.get_edited_scene_root()
+	_say(bake_hitbox(target, root, is_3d_build(root, target)))
+
+
+# The button minus the selection and the editor, so the verify can press it
+# headless. Returns the status line.
+func bake_hitbox(target: Node, root: Node, as_3d: bool = false) -> String:
 	var team := _hit_side.get_selected_id()
 	var hits := "player side, hurts enemies" if team == TEAM_PLAYER else "enemy side, hurts the player"
-	var hb := _find_child_named(target, "HitboxLite")
+	var hb := _find_child_named(target, "HitboxLite3D" if as_3d else "HitboxLite")
 	if hb != null:
 		hb.set("damage", float(_dmg.value))
 		hb.set("team", team)
 		# no node added, so nothing else flags the scene for Play
-		EditorInterface.mark_scene_as_unsaved()
-		_say("'%s' already had a Hitbox. Set it to %d dmg, %s.%s" % [target.name, int(_dmg.value), hits, fit_enemy_reach(target, hb, EditorInterface.get_edited_scene_root())])
-		return
-	hb = _inert(HITBOX)
-	hb.name = "HitboxLite"
+		_mark_unsaved()
+		return "'%s' already had a Hitbox. Set it to %d dmg, %s.%s" % [target.name, int(_dmg.value), hits, fit_enemy_reach(target, hb, root)]
+	if as_3d:
+		hb = _inert(HITBOX_3D)
+		hb.name = "HitboxLite3D"
+	else:
+		hb = _inert(HITBOX)
+		hb.name = "HitboxLite"
 	hb.set("damage", float(_dmg.value))
 	hb.set("team", team)
 	_own(target, hb)
-	_add_shape(hb)
-	_say("Added Hitbox (%d dmg, %s) to '%s'.%s" % [int(_dmg.value), hits, target.name, fit_enemy_reach(target, hb, EditorInterface.get_edited_scene_root())])
+	if as_3d:
+		_add_shape_3d(hb, Vector3(1.5, 1.5, 1.5), _body_center(target))
+	else:
+		_add_shape(hb)
+	return "Added Hitbox (%d dmg, %s) to '%s'.%s" % [int(_dmg.value), hits, target.name, fit_enemy_reach(target, hb, root)]
 
 
 # The HealthLite on the node or among its children (placeholders report their
@@ -180,6 +214,27 @@ func _find_child_named(target: Node, n: String) -> Node:
 		if c.name == n:
 			return c
 	return null
+
+
+# True when the open scene's root is a Node3D. A 2D root, a Control root or no scene
+# keep today's 2D builds.
+func is_3d_scene(root: Node) -> bool:
+	return root is Node3D
+
+
+# Whether a build on `target` makes 3D nodes. A Node3D root means 3D and a Node2D root
+# means 2D. Under any other root (a plain Node) the node being built on decides.
+func is_3d_build(root: Node, target: Node) -> bool:
+	if root is Node3D:
+		return true
+	if root is Node2D:
+		return false
+	return target is Node3D
+
+
+func _refresh_mode() -> void:
+	if _mode != null:
+		_mode.visible = is_3d_scene(EditorInterface.get_edited_scene_root())
 
 
 func _selected() -> Node:
@@ -216,6 +271,25 @@ func _add_shape(area: Node) -> void:
 	var rect := RectangleShape2D.new()
 	rect.size = Vector2(32, 32)
 	shape.shape = rect
+	_own(area, shape)
+
+
+# The first CollisionShape3D on a body tells where its middle is, so hitboxes and
+# hurtboxes line up with it. A body with none is taken to stand on its origin.
+func _body_center(target: Node) -> Vector3:
+	for c in target.get_children():
+		if c is CollisionShape3D:
+			return (c as CollisionShape3D).position
+	return Vector3(0.0, 0.9, 0.0) if target is PhysicsBody3D else Vector3.ZERO
+
+
+func _add_shape_3d(area: Node, size: Vector3, at: Vector3) -> void:
+	var shape := CollisionShape3D.new()
+	shape.name = "Shape"
+	var box := BoxShape3D.new()
+	box.size = size
+	shape.shape = box
+	shape.position = at
 	_own(area, shape)
 
 
@@ -269,6 +343,7 @@ func _on_remove_toggled(_on: bool) -> void:
 
 func _on_selection_changed() -> void:
 	refresh_remove_tick(_selected())
+	_refresh_mode()
 
 
 # ---- enemy reach (headless-safe, the verify calls these) -----------------
@@ -277,7 +352,8 @@ func _on_selection_changed() -> void:
 # children) only lands if the brain walks close enough, so give each brain the
 # attack radius that lets this hitbox overlap the player's hurtbox, and make it
 # swing the hitbox. Returns what it did for the status line, "" when there's no
-# brain here.
+# brain here. A 3D hitbox does the same sum in metres: this dock's 3D box is 1 m
+# where its 2D one is 32 px, so every pixel figure shrinks by 1/32.
 func fit_enemy_reach(body: Node, hitbox: Node, root: Node) -> String:
 	var brains: Array[Node] = []
 	for n in [body] + body.get_children():
@@ -285,11 +361,12 @@ func fit_enemy_reach(body: Node, hitbox: Node, root: Node) -> String:
 			brains.append(n)
 	if brains.is_empty():
 		return ""
+	var s := UNIT_3D if hitbox is Area3D else 1.0
 	var hurt := _player_hurtbox(root)
 	var hit_half := _half_width(hitbox)
 	var hurt_half := _half_width(hurt)
 	var touch := _touch(body, root)
-	var r := reach_for(hit_half, hurt_half, touch)
+	var r := reach_for(hit_half, hurt_half, touch, s)
 	var opened := ""
 	var swing := ""
 	for b in brains:
@@ -299,13 +376,14 @@ func fit_enemy_reach(body: Node, hitbox: Node, root: Node) -> String:
 		if root != null and b.owner != null and b.owner != root and not root.is_editable_instance(b.owner):
 			root.set_editable_instance(b.owner, true)
 			opened = " Turned on Editable Children for '%s' so the level saves its Brain." % b.owner.name
-	var reach := _reach(hit_half, hurt_half)
+	var reach := _reach(hit_half, hurt_half, s)
+	var u := _unit(s)
 	var msg := ""
-	if touch + 2.0 > reach - 2.0:
-		msg = " Set its Brain's attack radius to %s, as close as this hitbox reaches (%s). It can't reach far enough past the two bodies though: they touch at %s px and the boxes only overlap closer than %s px. Make the hitbox bigger." % [_px(r), _reach_why(hit_half, hurt_half, 0.0), _px(touch), _px(reach)]
+	if touch + 2.0 * s > reach - 2.0 * s:
+		msg = " Set its Brain's attack radius to %s, as close as this hitbox reaches (%s). It can't reach far enough past the two bodies though: they touch at %s %s and the boxes only overlap closer than %s %s. Make the hitbox bigger." % [_px(r, s), _reach_why(hit_half, hurt_half, 0.0, s), _px(touch, s), u, _px(reach, s), u]
 		swing = ""   # it's wired, but it won't be hurting anyone from there
 	else:
-		msg = " Set its Brain's attack radius to %s so this hitbox overlaps the player's hurtbox (%s)." % [_px(r), _reach_why(hit_half, hurt_half, touch)]
+		msg = " Set its Brain's attack radius to %s so this hitbox overlaps the player's hurtbox (%s)." % [_px(r, s), _reach_why(hit_half, hurt_half, touch, s)]
 	var side := ""
 	if hurt != null and int(hitbox.get("team")) == int(hurt.get("team")):
 		swing = ""
@@ -318,7 +396,7 @@ func fit_enemy_reach(body: Node, hitbox: Node, root: Node) -> String:
 # brains swing whatever attack_node_path points at: point it here, unless the
 # buyer already pointed it somewhere else. Lite brains do it on their own.
 func _swing(brain: Node, hitbox: Node) -> String:
-	var every := " Its Brain switches this hitbox on for each attack, so it keeps hurting the player every %s s while in reach." % _px(float(brain.get("attack_cooldown")))
+	var every := " Its Brain switches this hitbox on for each attack, so it keeps hurting the player every %s s while in reach." % _px(float(brain.get("attack_cooldown")), 1.0)
 	if "attack_node_path" in brain:
 		var now: NodePath = brain.get("attack_node_path")
 		var current: Node = brain.get_node_or_null(now) if not now.is_empty() else null
@@ -334,26 +412,35 @@ func _swing(brain: Node, hitbox: Node) -> String:
 # 3/4 of the reach (the two half-widths added, a box that isn't there counting
 # as this dock's 32x32 one), but at least 2 px past where the two bodies touch,
 # or they stop the brain before it ever attacks, and at most 2 px inside the reach.
-func reach_for(hit_half: float, hurt_half: float, touch: float = 0.0) -> float:
-	var reach := _reach(hit_half, hurt_half)
-	var r := minf(maxf(REACH * reach, touch + 2.0), reach - 2.0)
-	return maxf(1.0, floorf(r * 10.0) / 10.0)
+# `s` is the size of a pixel in the units asked for: 1 for 2D, UNIT_3D for 3D metres.
+func reach_for(hit_half: float, hurt_half: float, touch: float = 0.0, s: float = 1.0) -> float:
+	var reach := _reach(hit_half, hurt_half, s)
+	var r := minf(maxf(REACH * reach, touch + 2.0 * s), reach - 2.0 * s)
+	if s == 1.0:
+		return maxf(1.0, floorf(r * 10.0) / 10.0)
+	return maxf(s, floorf(r * 100.0 + 0.001) / 100.0)
 
 
-func _reach(hit_half: float, hurt_half: float) -> float:
-	return (hit_half if hit_half >= 0.0 else BOX_HALF) + (hurt_half if hurt_half >= 0.0 else BOX_HALF)
+func _reach(hit_half: float, hurt_half: float, s: float = 1.0) -> float:
+	# a box that isn't there counts as the one this dock builds: 32x32 in 2D, in 3D a 1.5 m
+	# hitbox and a 0.9 m hurtbox
+	var hit_default := BOX_HALF if s == 1.0 else HIT_HALF_3D
+	var hurt_default := BOX_HALF if s == 1.0 else HURT_HALF_3D
+	return (hit_half if hit_half >= 0.0 else hit_default) + (hurt_half if hurt_half >= 0.0 else hurt_default)
 
 
-func _reach_why(hit_half: float, hurt_half: float, touch: float) -> String:
-	var why := "sized for this dock's 32x32 boxes"
+func _reach_why(hit_half: float, hurt_half: float, touch: float, s: float = 1.0) -> String:
+	var hit_box := "32x32" if s == 1.0 else "1.5 m"
+	var hurt_box := "32x32" if s == 1.0 else "0.9 m"
+	var why := "sized for this dock's %s boxes" % hit_box if s == 1.0 else "sized for this dock's %s hitbox and %s hurtbox" % [hit_box, hurt_box]
 	if hit_half >= 0.0 and hurt_half >= 0.0:
 		why = "measured from both boxes"
 	elif hit_half >= 0.0:
-		why = "measured from this hitbox, with the player's hurtbox counted as this dock's 32x32 box"
+		why = "measured from this hitbox, with the player's hurtbox counted as this dock's %s box" % hurt_box
 	elif hurt_half >= 0.0:
-		why = "measured from the player's hurtbox, with this hitbox counted as this dock's 32x32 box"
-	if touch + 2.0 > REACH * _reach(hit_half, hurt_half):
-		why += ", and 2 px past where the two bodies touch (%s px) so they can't stop it short of attacking" % _px(touch)
+		why = "measured from the player's hurtbox, with this hitbox counted as this dock's %s box" % hit_box
+	if touch + 2.0 * s > REACH * _reach(hit_half, hurt_half, s):
+		why += ", and %s %s past where the two bodies touch (%s %s) so they can't stop it short of attacking" % [_px(2.0 * s, s), _unit(s), _px(touch, s), _unit(s)]
 	return why
 
 
@@ -444,8 +531,14 @@ func _scale_x(n: Node) -> float:
 	return 1.0
 
 
-func _px(v: float) -> String:
+func _px(v: float, s: float = 1.0) -> String:
+	if s != 1.0:
+		return ("%.2f" % v).rstrip("0").rstrip(".")
 	return str(int(v)) if is_equal_approx(v, roundf(v)) else "%.1f" % v
+
+
+func _unit(s: float) -> String:
+	return "px" if s == 1.0 else "m"
 
 
 func _num(min_v: float, max_v: float, value: float) -> SpinBox:

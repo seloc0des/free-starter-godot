@@ -5,7 +5,8 @@ extends Node
 
 # Both are emitted by Health and Hitbox rather than from here, so the compiler
 # can't see a use and warns on each. Silenced so a buyer's debugger stays clean.
+# `position` is a Vector2 from a 2D hurtbox and a Vector3 from a 3D one, so it has no type.
 @warning_ignore("unused_signal")
-signal hit_landed(position: Vector2, amount: float, source: Node)
+signal hit_landed(position, amount: float, source: Node)
 @warning_ignore("unused_signal")
 signal entity_died(entity: Node)

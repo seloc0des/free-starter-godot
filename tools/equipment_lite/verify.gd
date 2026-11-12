@@ -49,6 +49,15 @@ func _assert(cond: bool, msg: String) -> void:
 
 # ---- helpers -------------------------------------------------------------
 
+# How many "needs_mouse" panels are on screen right now: what a third-person camera counts.
+func _mouse_panels_shown() -> int:
+	var n := 0
+	for p in get_tree().get_nodes_in_group(&"needs_mouse"):
+		if p is CanvasItem and (p as CanvasItem).is_visible_in_tree():
+			n += 1
+	return n
+
+
 func _item(id: String, slot: String = "") -> Resource:
 	var it: Resource = ItemLiteScript.new()
 	it.id = id
@@ -297,6 +306,7 @@ func _run_equipped_list_toggles() -> void:
 		"EquippedList: a hand-added list places itself bottom-right (%s in %s)" % [str(r), str(vp)])
 	await _press(KEY_C)
 	_assert(list.visible, "EquippedList: C opens it")
+	_assert(_mouse_panels_shown() == 1, "EquippedList: the open list is a needs_mouse panel, so a third-person camera frees the mouse")
 	var want := PackedStringArray(["Weapon: Iron Sword", "Chest: -", "Boots: -", "Ring: -"])
 	_assert(_rows(list) == want, "EquippedList: one line per slot (got %s)" % str(_rows(list)))
 	l.eq.equip("boots", boots)
@@ -304,6 +314,7 @@ func _run_equipped_list_toggles() -> void:
 	_assert(_rows(list)[2] == "Boots: Leather Boots", "EquippedList: it follows the equipment's changes (got %s)" % str(_rows(list)))
 	await _press(KEY_C)
 	_assert(not list.visible, "EquippedList: C again closes it")
+	_assert(_mouse_panels_shown() == 0, "EquippedList: closed, no needs_mouse panel is showing")
 	l.level.queue_free()
 	InputMap.erase_action(&"verify_list_toggle")
 

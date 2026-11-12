@@ -49,6 +49,15 @@ func _assert(cond: bool, msg: String) -> void:
 
 # ---- helpers -------------------------------------------------------------
 
+# How many "needs_mouse" panels are on screen right now: what a third-person camera counts.
+func _mouse_panels_shown() -> int:
+	var n := 0
+	for p in get_tree().get_nodes_in_group(&"needs_mouse"):
+		if p is CanvasItem and (p as CanvasItem).is_visible_in_tree():
+			n += 1
+	return n
+
+
 class _MiniBag extends Node:
 	var items: Dictionary = {}
 	func count_item(item: Resource) -> int: return int(items.get(str(item.id), 0))
@@ -307,6 +316,7 @@ func _run_shop_play() -> void:
 	hero.global_position = near
 	await _physics(4)
 	_assert(panel.visible, "ShopPlay: walking into the ShopArea opens it")
+	_assert(_mouse_panels_shown() == 1, "ShopPlay: the open ShopPanel is a needs_mouse panel, so a third-person camera frees the mouse")
 	await get_tree().process_frame
 	var r := panel.get_global_rect()
 	_assert(Rect2(Vector2.ZERO, Vector2(1152, 648)).encloses(r) and r.size.x >= 400.0 and r.size.y >= 250.0 and r.position.y >= 300.0,
@@ -368,6 +378,7 @@ func _run_shop_play() -> void:
 	hero.global_position = Vector2(100, 100)
 	await _physics(4)
 	_assert(not panel.visible, "ShopPlay: walking out closes it")
+	_assert(_mouse_panels_shown() == 0, "ShopPlay: closed, no needs_mouse panel is showing")
 	hero.global_position = near
 	await _physics(4)
 	_assert(panel.visible, "ShopPlay: walking back in opens it again")

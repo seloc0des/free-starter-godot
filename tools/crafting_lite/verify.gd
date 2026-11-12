@@ -48,6 +48,15 @@ func _assert(cond: bool, msg: String) -> void:
 
 # ---- helpers -------------------------------------------------------------
 
+# How many "needs_mouse" panels are on screen right now: what a third-person camera counts.
+func _mouse_panels_shown() -> int:
+	var n := 0
+	for p in get_tree().get_nodes_in_group(&"needs_mouse"):
+		if p is CanvasItem and (p as CanvasItem).is_visible_in_tree():
+			n += 1
+	return n
+
+
 # Minimal duck-typed bag for the crafting tests. The Lite crafting addon
 # expects has_item / remove_item / add_item.
 class _MiniBag extends Node:
@@ -255,6 +264,7 @@ func _run_bench_play() -> void:
 	hero.global_position = near
 	await _physics(4)
 	_assert(panel.visible, "BenchPlay: walking up to the bench opens it")
+	_assert(_mouse_panels_shown() == 1, "BenchPlay: the open CraftPanel is a needs_mouse panel, so a third-person camera frees the mouse")
 	await get_tree().process_frame
 	var r := panel.get_global_rect()
 	_assert(r.is_equal_approx(Rect2(416, 16, 320, 300)), "BenchPlay: it sits top centre, 320x300 in a 1152x648 window (%s)" % r)
@@ -303,6 +313,7 @@ func _run_bench_play() -> void:
 	hero.global_position = Vector2(100, 100)
 	await _physics(4)
 	_assert(not panel.visible, "BenchPlay: walking away closes it")
+	_assert(_mouse_panels_shown() == 0, "BenchPlay: closed, no needs_mouse panel is showing")
 	hero.global_position = near
 	await _physics(4)
 	_assert(panel.visible, "BenchPlay: walking back up opens it again")

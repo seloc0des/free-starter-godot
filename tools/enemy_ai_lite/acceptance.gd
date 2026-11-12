@@ -4,6 +4,7 @@ extends Control
 # PASS/FAIL tells you the pack is healthy in this editor, with the checklist below.
 
 const CHECKS := preload("res://tools/enemy_ai_lite/enemy_checks.gd")
+const CHECKS_3D := preload("res://tools/enemy_ai_lite/enemy_checks_3d.gd")
 
 @onready var _banner: Label = %Banner
 @onready var _detail: RichTextLabel = %Detail
@@ -16,6 +17,12 @@ func _ready() -> void:
 	var rp: Dictionary = await CHECKS.run_physics(self)
 	lines.append_array(rp["lines"])
 	ok = ok and rp["ok"]
+	var r3: Dictionary = CHECKS_3D.run(self)
+	lines.append_array(r3["lines"])
+	ok = ok and r3["ok"]
+	var rp3: Dictionary = await CHECKS_3D.run_physics(self)
+	lines.append_array(rp3["lines"])
+	ok = ok and rp3["ok"]
 	_banner.text = "PASS" if ok else "FAIL"
 	_banner.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if ok else Color(0.95, 0.35, 0.35))
 	for l in lines:

@@ -41,6 +41,8 @@ var _dirty := false
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
+	# A third-person camera gives the mouse back while a panel in this group is showing.
+	add_to_group(&"needs_mouse")
 	if _unplaced():
 		_place()
 	_build()

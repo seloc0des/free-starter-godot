@@ -15,8 +15,12 @@ func _enter_tree() -> void:
 	# Chooser first so it's the tab a non-coder lands on; the "Loot Tables — Lite"
 	# tab below is the reflective authoring dock.
 	_chooser = CHOOSER_SCRIPT.new()
+	# Named here, not only in the dock's _ready: Godot 4.5 reads the tab title
+	# the moment the dock is added, before _ready has run.
+	_chooser.name = "Loot · Setup"
 	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_UL, _chooser)
 	_dock = DOCK_SCRIPT.new()
+	_dock.name = "Loot Tables (Lite)"
 	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_UL, _dock)
 
 

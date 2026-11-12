@@ -7,6 +7,7 @@ extends Node
 
 const CHECKS := preload("res://tools/scene_flow_lite/flow_checks.gd")
 const CHECKER := preload("res://tools/scene_flow_lite/flow_checker.gd")
+const CHECKS_3D := preload("res://tools/scene_flow_lite/flow_checks_3d.gd")
 
 
 func _ready() -> void:
@@ -16,6 +17,18 @@ func _ready() -> void:
 	var rf: Dictionary = await CHECKS.run_fades(self)
 	lines.append_array(rf["lines"])
 	ok = ok and rf["ok"]
+	var r3: Dictionary = CHECKS_3D.run(self)
+	lines.append_array(r3["lines"])
+	ok = ok and r3["ok"]
+	var rd: Dictionary = CHECKS_3D.run_dock(self)
+	lines.append_array(rd["lines"])
+	ok = ok and rd["ok"]
+	var rt: Dictionary = await CHECKS_3D.run_retry(self)
+	lines.append_array(rt["lines"])
+	ok = ok and rt["ok"]
+	var rm: Dictionary = CHECKS_3D.run_demo(self)
+	lines.append_array(rm["lines"])
+	ok = ok and rm["ok"]
 	var checker: Node = CHECKER.new()
 	get_tree().root.add_child(checker)
 	checker.done.connect(func(swap_ok: bool, swap_lines: Array) -> void:

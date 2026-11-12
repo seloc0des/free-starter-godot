@@ -60,6 +60,15 @@ func _assert(cond: bool, msg: String) -> void:
 
 # ---- helpers -------------------------------------------------------------
 
+# How many "needs_mouse" panels are on screen right now: what a third-person camera counts.
+func _mouse_panels_shown() -> int:
+	var n := 0
+	for p in get_tree().get_nodes_in_group(&"needs_mouse"):
+		if p is CanvasItem and (p as CanvasItem).is_visible_in_tree():
+			n += 1
+	return n
+
+
 func _approx(a: float, b: float, eps: float = 0.001) -> bool:
 	return abs(a - b) < eps
 
@@ -434,10 +443,12 @@ func _run_list_toggles_on_c() -> void:
 	_assert(not list.visible, "Key: the list starts hidden")
 	await _key(KEY_C)
 	_assert(list.visible, "Key: C opens it")
+	_assert(_mouse_panels_shown() == 1, "Key: the open list is a needs_mouse panel, so a third-person camera frees the mouse")
 	await _key(KEY_X)
 	_assert(list.visible, "Key: another key leaves it alone")
 	await _key(KEY_C)
 	_assert(not list.visible, "Key: C closes it again")
+	_assert(_mouse_panels_shown() == 0, "Key: closed, no needs_mouse panel is showing")
 	list.toggle_action = &"no_such_action"
 	await _key(KEY_C)
 	_assert(not list.visible, "Key: with no such action nothing opens it, and nothing breaks")

@@ -40,16 +40,50 @@ func change_scene(path: String, spawn: StringName = &"", fade := true) -> void:
 
 
 var _placed_msec := -100000
+var _warned_mismatch := false
 
 
+## Put every "player" group node on the spawn point. A Node2D player lands on a
+## Node2D spawn. A Node3D player lands on a Node3D spawn, facing the way the
+## spawn's -Z axis points, with a CharacterBody3D's velocity zeroed so it doesn't
+## carry its fall into the new room.
 func place_player(spawn: StringName = &"") -> void:
 	var sp := _find_spawn(spawn)
 	if sp == null:
 		return
 	for p in get_tree().get_nodes_in_group("player"):
-		if p is Node2D:
+		if sp is Node2D and p is Node2D:
 			p.global_position = sp.global_position
+		elif sp is Node3D and p is Node3D:
+			_place_3d(p, sp)
+		elif p is Node2D or p is Node3D:
+			_warn_mismatch(p, sp)
 	_placed_msec = Time.get_ticks_msec()
+
+
+func _place_3d(player: Node3D, sp: Node3D) -> void:
+	var forward := -sp.global_basis.z
+	var yaw := atan2(-forward.x, -forward.z)
+	# global_rotation turns the body and leaves its scale alone, also under a scaled
+	# parent (the checks pin that, since an imported model is often scaled).
+	player.global_position = sp.global_position
+	player.global_rotation = Vector3(0.0, yaw, 0.0)
+	if player is CharacterBody3D:
+		(player as CharacterBody3D).velocity = Vector3.ZERO
+	elif player is RigidBody3D:
+		(player as RigidBody3D).linear_velocity = Vector3.ZERO
+	# no smeared frame between the old spot and the new one
+	player.reset_physics_interpolation()
+
+
+# A 2D player on a 3D spawn (or the other way round) can't land anywhere. Say so
+# once instead of leaving the player where they were with no explanation.
+func _warn_mismatch(player: Node, sp: Node) -> void:
+	if _warned_mismatch:
+		return
+	_warned_mismatch = true
+	push_warning("SceneFlowLite: player '%s' is %s but spawn '%s' is %s, so the player was not moved. Use a 2D spawn with a 2D player, or a 3D spawn with a 3D player." % [
+		player.name, "2D" if player is Node2D else "3D", sp.name, "2D" if sp is Node2D else "3D"])
 
 
 ## True for a moment after place_player put the player somewhere. A door under that spot
@@ -68,7 +102,7 @@ func is_changing() -> bool:
 	return _changing
 
 
-func _find_spawn(id: StringName) -> Node2D:
+func _find_spawn(id: StringName) -> Node:
 	var pts := get_tree().get_nodes_in_group("scene_spawn")
 	if pts.is_empty():
 		return null

@@ -21,6 +21,8 @@ var _warned := false
 func _ready() -> void:
 	if Engine.is_editor_hint():
 		return
+	# A third-person camera gives the mouse back while a panel in this group is showing.
+	add_to_group(&"needs_mouse")
 	if _unplaced():
 		# added by hand: go where the Setup tab puts it, bottom-left
 		set_anchors_preset(Control.PRESET_BOTTOM_LEFT)

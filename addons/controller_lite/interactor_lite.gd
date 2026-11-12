@@ -46,7 +46,9 @@ func _on_area_entered(area: Area2D) -> void:
 
 
 func _on_area_exited(area: Area2D) -> void:
-	_in_reach.erase(area)
+	# a typed array refuses anything else, with an error each time, so only the right kind
+	if area is InteractableLite:
+		_in_reach.erase(area)
 	_refresh_focus()
 
 

@@ -29,6 +29,9 @@ func _disable_plugin() -> void:
 func _enter_tree() -> void:
 	_ensure_autoload()
 	_dock = DOCK_SCRIPT.new()
+	# Named here, not only in the dock's _ready: Godot 4.5 reads the tab title
+	# the moment the dock is added, before _ready has run.
+	_dock.name = "Audio Lite"
 	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_UL, _dock)
 
 

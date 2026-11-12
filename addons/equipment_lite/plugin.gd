@@ -15,8 +15,12 @@ func _enter_tree() -> void:
 	# Chooser first so a non-coder lands on "pick what you want → Apply". The
 	# "Equippables — Lite" tab beside it is where they author the item resources.
 	_chooser = CHOOSER_SCRIPT.new()
+	# Named here, not only in the dock's _ready: Godot 4.5 reads the tab title
+	# the moment the dock is added, before _ready has run.
+	_chooser.name = "Equipment · Setup"
 	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_UL, _chooser)
 	_dock = DOCK_SCRIPT.new()
+	_dock.name = "Equippables (Lite)"
 	add_control_to_dock(EditorPlugin.DOCK_SLOT_RIGHT_UL, _dock)
 
 

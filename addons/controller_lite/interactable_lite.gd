@@ -97,17 +97,20 @@ func _place_prompt() -> void:
 	_prompt_label.position = Vector2(-sz.x * 0.5, top - sz.y - 4.0)
 
 
+func _toast(text: String) -> void:
+	if is_inside_tree():
+		show_toast(get_tree(), text)
+
+
 # Lites are standalone, so this carries its own little toast, the same one the
 # other lites use: a label at the top centre, under any toast that's already up,
-# gone after 2 seconds.
-func _toast(text: String) -> void:
-	if not is_inside_tree():
-		return
-	var host: Node = get_tree().current_scene
+# gone after 2 seconds. Static so the 3D interactable shows exactly the same one.
+static func show_toast(tree: SceneTree, text: String) -> void:
+	var host: Node = tree.current_scene
 	if host == null:
-		host = get_tree().root
+		host = tree.root
 	var shown := 0
-	for t in get_tree().get_nodes_in_group("lite_toast"):
+	for t in tree.get_nodes_in_group("lite_toast"):
 		if not t.is_queued_for_deletion():
 			shown += 1
 	var layer := CanvasLayer.new()
@@ -126,7 +129,7 @@ func _toast(text: String) -> void:
 	label.add_theme_constant_override("outline_size", 6)
 	layer.add_child(label)
 	host.add_child(layer)
-	get_tree().create_timer(2.0).timeout.connect(layer.queue_free)
+	tree.create_timer(2.0).timeout.connect(layer.queue_free)
 
 
 # ControllersLite is looked up when used instead of named. A script that names an

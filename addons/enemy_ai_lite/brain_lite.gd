@@ -31,6 +31,8 @@ var target: Node2D = null
 var home := Vector2.ZERO
 
 var _body: CharacterBody2D = null
+var _health: Node = null    # a sibling with is_alive() (HealthLite fits), found in _ready
+var _target_id := 0         # instance id of `target`, so a freed one is noticed
 var _cooldown := 0.0
 var _swing: Area2D = null     # the hitbox switched on for the current attack
 var _swing_left := 0.0
@@ -43,6 +45,10 @@ func _ready() -> void:
 		set_physics_process(false)
 		return
 	home = _body.global_position
+	for c in _body.get_children():
+		if c != self and c.has_method("is_alive"):
+			_health = c
+			break
 
 
 func _physics_process(delta: float) -> void:
@@ -51,6 +57,18 @@ func _physics_process(delta: float) -> void:
 		if _swing_left > 0.0:
 			_swing_left = 0.0
 			_arm(false)
+		return
+	if _health_dead():
+		# a corpse that stays in the scene (respawn delay, remove_on_death off)
+		# stops fighting, and picks up again when it revives
+		if _swing_left > 0.0:
+			_swing_left = 0.0
+			_arm(false)
+		if target != null:
+			_drop_target()
+		_switch(IDLE)
+		_body.velocity = Vector2.ZERO
+		_body.move_and_slide()
 		return
 	_cooldown = maxf(0.0, _cooldown - delta)
 	_tick_swing(delta)
@@ -76,6 +94,12 @@ func _physics_process(delta: float) -> void:
 
 func set_state(to: StringName) -> void:
 	_switch(to)
+
+
+# Dead by is_alive(), which HealthLite and CombatHealth both answer. The brain only
+# takes a sibling that has it, so there is no signal fallback here.
+func _health_dead() -> bool:
+	return _health != null and is_instance_valid(_health) and not bool(_health.call("is_alive"))
 
 
 # ---- states --------------------------------------------------------------
@@ -116,6 +140,12 @@ func _do_return() -> void:
 # ---- internals -----------------------------------------------------------
 
 func _update_target() -> void:
+	# a freed target is not null to the type system, so look it up by id. It is
+	# only let go here: the search below may find another one in the same tick.
+	var lost := false
+	if _target_id != 0 and not is_instance_valid(instance_from_id(_target_id)):
+		_drop_target()
+		lost = true
 	if state == RETURN:
 		return                                              # deaf until home — no leash ping-pong
 	var best: Node2D = null
@@ -127,6 +157,7 @@ func _update_target() -> void:
 				best_d = d
 				best = n
 	if best != null and best_d <= detect_radius:
+		_target_id = best.get_instance_id()
 		if target == null:
 			target = best
 			target_acquired.emit(best)
@@ -138,10 +169,13 @@ func _update_target() -> void:
 		_drop_target()
 		if state == CHASE or state == ATTACK:
 			_switch(RETURN)
+	elif lost and (state == CHASE or state == ATTACK):
+		_switch(RETURN)                                     # nobody else in range
 
 
 func _drop_target() -> void:
 	target = null
+	_target_id = 0
 	target_lost.emit()
 
 

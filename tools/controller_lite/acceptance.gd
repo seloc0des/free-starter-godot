@@ -4,6 +4,7 @@ extends Control
 # PASS/FAIL tells you the pack is healthy in this editor, with the checklist below.
 
 const CHECKS := preload("res://tools/controller_lite/controller_checks.gd")
+const CHECKS_3D := preload("res://tools/controller_lite/controller_checks_3d.gd")
 
 @onready var _banner: Label = %Banner
 @onready var _detail: RichTextLabel = %Detail
@@ -19,6 +20,12 @@ func _ready() -> void:
 	var ri: Dictionary = await CHECKS.run_interaction(self)
 	lines.append_array(ri["lines"])
 	ok = ok and ri["ok"]
+	var r3: Dictionary = CHECKS_3D.run(self)
+	lines.append_array(r3["lines"])
+	ok = ok and r3["ok"]
+	var r3p: Dictionary = await CHECKS_3D.run_physics(self)
+	lines.append_array(r3p["lines"])
+	ok = ok and r3p["ok"]
 	_banner.text = "PASS" if ok else "FAIL"
 	_banner.add_theme_color_override("font_color", Color(0.4, 0.9, 0.4) if ok else Color(0.95, 0.35, 0.35))
 	for l in lines:
